@@ -2,7 +2,7 @@ backend:
   name: github
   repo: "haroonahmedd93-code/portfolio"
   branch: main
-  base_url: "https://portfolio-one-kohl-91.vercel.app"
+  base_url: "https://haroonahmedbutt.vercel.app"
   auth_endpoint: api/auth
 
 publish_mode: simple
