@@ -1,0 +1,195 @@
+{
+  "site": {
+    "name": "[YOUR_NAME]",
+    "role": "[YOUR_ROLE]",
+    "statement": "I design and build interfaces that feel considered — from fintech risk controls to marketplace products used by millions.",
+    "email": "[YOUR_EMAIL]",
+    "resumeUrl": "/resume.pdf",
+    "nav": [
+      {
+        "label": "Work",
+        "href": "/projects/"
+      },
+      {
+        "label": "About",
+        "href": "/about/"
+      },
+      {
+        "label": "Contact",
+        "href": "/contact/"
+      }
+    ],
+    "social": [
+      {
+        "label": "GitHub",
+        "url": "https://github.com/[GITHUB_USERNAME]"
+      },
+      {
+        "label": "LinkedIn",
+        "url": "https://linkedin.com/in/[GITHUB_USERNAME]"
+      },
+      {
+        "label": "Email",
+        "url": "mailto:[YOUR_EMAIL]"
+      }
+    ],
+    "services": [
+      {
+        "title": "Product Design",
+        "description": "End-to-end product design from discovery through high-fidelity UI, backed by systems thinking."
+      },
+      {
+        "title": "Design Systems",
+        "description": "Scalable component libraries and design tokens that keep teams shipping consistent product."
+      },
+      {
+        "title": "Fintech & Risk UX",
+        "description": "Interfaces for card controls, fraud review, and spend-management built for clarity under pressure."
+      }
+    ],
+    "seo": {
+      "title": "[YOUR_NAME] — [YOUR_ROLE]",
+      "description": "Portfolio of [YOUR_NAME], [YOUR_ROLE]. Selected work in product design, design systems, and fintech UX.",
+      "ogImage": "/images/og-cover.svg"
+    }
+  },
+  "about": {
+    "title": "About",
+    "portrait": "/images/portrait-placeholder.svg",
+    "skills": [
+      "Product Design",
+      "Design Systems",
+      "Interaction Design",
+      "Figma / Prototyping",
+      "Fintech & Risk UX",
+      "Design-to-Code Handoff"
+    ],
+    "experience": [
+      {
+        "role": "Senior Product Designer",
+        "org": "[COMPANY_ONE]",
+        "period": "2025 — Present",
+        "description": "Leading product design across core marketplace flows and the shared design system."
+      },
+      {
+        "role": "Senior Product Designer, Cards Team",
+        "org": "[COMPANY_TWO]",
+        "period": "2023 — Present",
+        "description": "Designing fintech spend-control features — card controls, fraud/risk review, and MCC limits."
+      },
+      {
+        "role": "Lead Product Designer",
+        "org": "[COMPANY_THREE]",
+        "period": "2021 — 2023",
+        "description": "Owned end-to-end design for a CRM and talent-marketplace platform."
+      }
+    ],
+    "body": "I'm a product designer who moves fluidly between marketplace products and fintech risk tooling — two worlds that both reward the same thing: clarity under constraint.\n\nMy work spans discovery, systems-level thinking, and pixel-level craft. I care about interfaces that hold up under real use — dense data, high-stakes decisions, and the everyday moments in between.\n\nOutside of client and product work, I spend time refining design systems and exploring how motion and interaction can make complex tools feel effortless."
+  },
+  "projects": [
+    {
+      "title": "Card Controls & Fraud Review",
+      "slug": "card-controls-fraud-review",
+      "role": "Senior Product Designer",
+      "year": "2025",
+      "tools": [
+        "Figma",
+        "Design Tokens",
+        "JIRA"
+      ],
+      "tags": [
+        "Fintech",
+        "Design Systems"
+      ],
+      "featured": true,
+      "order": 1,
+      "cover": "/images/project-placeholder-1.svg",
+      "gallery": [
+        "/images/project-placeholder-1.svg",
+        "/images/project-placeholder-2.svg"
+      ],
+      "summary": "A redesigned card-control and fraud-review experience for fleet spend management, reducing time-to-decision for risk analysts.",
+      "challenge": "Analysts were switching between four tools to approve or block card transactions, and the existing UI buried risk signals below the fold.",
+      "solution": "Consolidated risk signals, card rules, and MCC limits into a single reviewable surface with clear, reversible actions and inline audit history.",
+      "outcomes": [
+        "38% faster average review time",
+        "Reduced false-positive escalations",
+        "Shipped as the template for two adjacent risk workflows"
+      ],
+      "links": [
+        {
+          "label": "Live product",
+          "url": "#"
+        }
+      ],
+      "body": "Full case study content goes here. Replace with your process, decisions, and supporting visuals."
+    },
+    {
+      "title": "Marketplace Listings Redesign",
+      "slug": "marketplace-listings-redesign",
+      "role": "Senior Product Designer",
+      "year": "2024",
+      "tools": [
+        "Figma",
+        "Adobe XD",
+        "InVision"
+      ],
+      "tags": [
+        "Marketplace",
+        "UX Research"
+      ],
+      "featured": true,
+      "order": 2,
+      "cover": "/images/project-placeholder-2.svg",
+      "gallery": [
+        "/images/project-placeholder-2.svg",
+        "/images/project-placeholder-1.svg"
+      ],
+      "summary": "A ground-up redesign of listing creation and discovery for a regional auto marketplace, improving completion rate and lead quality.",
+      "challenge": "Sellers dropped off mid-listing due to a long, unguided form, and buyers struggled to compare listings with inconsistent data.",
+      "solution": "Introduced a guided multi-step flow with smart defaults, and standardized listing cards around a shared data schema.",
+      "outcomes": [
+        "+22% listing completion rate",
+        "+15% qualified buyer leads",
+        "Adopted across two additional verticals"
+      ],
+      "links": [
+        {
+          "label": "Case study",
+          "url": "#"
+        }
+      ],
+      "body": "Full case study content goes here. Replace with your process, decisions, and supporting visuals."
+    },
+    {
+      "title": "Talent Marketplace Design System",
+      "slug": "talent-marketplace-design-system",
+      "role": "Lead Product Designer",
+      "year": "2023",
+      "tools": [
+        "Figma",
+        "Storybook"
+      ],
+      "tags": [
+        "Design Systems"
+      ],
+      "featured": false,
+      "order": 3,
+      "cover": "/images/project-placeholder-1.svg",
+      "gallery": [
+        "/images/project-placeholder-1.svg"
+      ],
+      "summary": "A token-based design system unifying a CRM and talent-marketplace product across web and internal tools.",
+      "challenge": "Two product surfaces had diverged visually and technically, slowing every new feature down with one-off components.",
+      "solution": "Built a shared token layer and component library adopted by both product teams, with documented usage guidelines.",
+      "outcomes": [
+        "Cut new-feature design time by a third",
+        "Single source of truth adopted org-wide"
+      ],
+      "links": [],
+      "body": "Full case study content goes here. Replace with your process, decisions, and supporting visuals."
+    }
+  ],
+  "journal": [],
+  "generatedAt": "2026-09-09T21:14:25.042Z"
+}

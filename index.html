@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>[YOUR_NAME] — [YOUR_ROLE]</title>
+  <meta name="description" content="Portfolio of [YOUR_NAME], [YOUR_ROLE]." />
+  <meta property="og:title" content="[YOUR_NAME] — [YOUR_ROLE]" />
+  <meta property="og:image" content="/images/og-cover.svg" />
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+</head>
+<body data-page="home">
+  <a class="skip-link" href="#main">Skip to content</a>
+  <header id="site-nav"></header>
+
+  <main id="main">
+    <section class="hero">
+      <div class="hero__canvas-wrap" aria-hidden="true">
+        <canvas id="hero-canvas"></canvas>
+        <div id="hero-fallback" hidden style="position:absolute;inset:0;background:radial-gradient(circle at 30% 20%, rgba(138,143,255,0.18), transparent 55%), radial-gradient(circle at 75% 70%, rgba(242,184,128,0.14), transparent 60%);"></div>
+      </div>
+      <div class="wrap hero__content">
+        <p class="hero__eyebrow" id="hero-role">[YOUR_ROLE]</p>
+        <h1 class="hero__title" id="hero-name">[YOUR_NAME]</h1>
+        <p class="hero__statement" id="hero-statement"></p>
+        <div class="hero__ctas">
+          <a class="btn btn--primary" href="/projects/">View selected work</a>
+          <a class="btn" id="hero-email-link" href="mailto:[YOUR_EMAIL]">Get in touch</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="wrap">
+      <div class="section-head">
+        <div>
+          <p class="section-eyebrow">Selected Work</p>
+          <h2>A few recent projects</h2>
+        </div>
+        <a class="btn" href="/projects/">All projects</a>
+      </div>
+      <div class="project-grid" id="selected-projects"></div>
+    </section>
+
+    <section class="wrap">
+      <div class="section-head">
+        <div>
+          <p class="section-eyebrow">About</p>
+          <h2>Product design, grounded in systems</h2>
+        </div>
+        <a class="btn" href="/about/">Full bio</a>
+      </div>
+      <p class="hero__statement" style="max-width:56ch;" data-reveal>
+        I design across marketplace products and fintech risk tooling, translating dense
+        requirements into interfaces people can trust at a glance.
+      </p>
+    </section>
+
+    <section class="wrap">
+      <div class="section-head">
+        <div>
+          <p class="section-eyebrow">Capabilities</p>
+          <h2>How I can help</h2>
+        </div>
+      </div>
+      <div class="services-grid" id="services-grid"></div>
+    </section>
+
+    <section class="wrap">
+      <div class="section-head">
+        <div>
+          <p class="section-eyebrow">Contact</p>
+          <h2>Let's build something considered</h2>
+        </div>
+      </div>
+      <p class="hero__statement" style="max-width:50ch;" data-reveal>
+        Open to select freelance and full-time opportunities.
+      </p>
+      <a class="btn btn--primary" href="/contact/">Start a conversation</a>
+    </section>
+  </main>
+
+  <footer id="site-footer"></footer>
+  <script type="module" src="/src/pages/home.js"></script>
+</body>
+</html>

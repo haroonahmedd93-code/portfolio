@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>About — [YOUR_NAME]</title>
+  <meta name="description" content="About [YOUR_NAME], [YOUR_ROLE]." />
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+</head>
+<body data-page="about">
+  <a class="skip-link" href="#main">Skip to content</a>
+  <header id="site-nav"></header>
+
+  <main id="main">
+    <section class="wrap" id="about-root">
+      <div class="section-head">
+        <div>
+          <p class="section-eyebrow">About</p>
+          <h1>Biography</h1>
+        </div>
+        <a class="btn btn--primary" id="about-resume" href="/resume.pdf" download>Download résumé</a>
+      </div>
+
+      <div class="about-grid">
+        <img id="about-portrait" src="/images/portrait-placeholder.svg" alt="Portrait" width="900" height="1100" data-reveal />
+        <div>
+          <div id="about-bio" data-reveal></div>
+          <h2 style="margin-top: var(--space-lg); font-size: var(--fs-lg);">Skills</h2>
+          <div class="skills-list" id="about-skills"></div>
+        </div>
+      </div>
+
+      <h2 style="margin-top: var(--space-2xl); font-size: var(--fs-lg);">Experience</h2>
+      <div class="timeline" id="about-timeline"></div>
+    </section>
+  </main>
+
+  <footer id="site-footer"></footer>
+  <script type="module" src="/src/pages/about.js"></script>
+</body>
+</html>

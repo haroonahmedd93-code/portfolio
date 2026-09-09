@@ -1,0 +1,23 @@
+{
+  "name": "portfolio",
+  "version": "1.0.0",
+  "description": "Personal portfolio — vanilla HTML/CSS/JS, Vite, GSAP, Three.js, Decap CMS on Vercel",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "prebuild": "node scripts/build-content.mjs",
+    "predev": "node scripts/build-content.mjs",
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "content:build": "node scripts/build-content.mjs"
+  },
+  "dependencies": {
+    "gray-matter": "^4.0.3",
+    "gsap": "^3.12.5",
+    "three": "^0.169.0"
+  },
+  "devDependencies": {
+    "vite": "^5.4.8"
+  }
+}

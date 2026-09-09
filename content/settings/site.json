@@ -1,0 +1,36 @@
+{
+  "name": "[YOUR_NAME]",
+  "role": "[YOUR_ROLE]",
+  "statement": "I design and build interfaces that feel considered — from fintech risk controls to marketplace products used by millions.",
+  "email": "[YOUR_EMAIL]",
+  "resumeUrl": "/resume.pdf",
+  "nav": [
+    { "label": "Work", "href": "/projects/" },
+    { "label": "About", "href": "/about/" },
+    { "label": "Contact", "href": "/contact/" }
+  ],
+  "social": [
+    { "label": "GitHub", "url": "https://github.com/[GITHUB_USERNAME]" },
+    { "label": "LinkedIn", "url": "https://linkedin.com/in/[GITHUB_USERNAME]" },
+    { "label": "Email", "url": "mailto:[YOUR_EMAIL]" }
+  ],
+  "services": [
+    {
+      "title": "Product Design",
+      "description": "End-to-end product design from discovery through high-fidelity UI, backed by systems thinking."
+    },
+    {
+      "title": "Design Systems",
+      "description": "Scalable component libraries and design tokens that keep teams shipping consistent product."
+    },
+    {
+      "title": "Fintech & Risk UX",
+      "description": "Interfaces for card controls, fraud review, and spend-management built for clarity under pressure."
+    }
+  ],
+  "seo": {
+    "title": "[YOUR_NAME] — [YOUR_ROLE]",
+    "description": "Portfolio of [YOUR_NAME], [YOUR_ROLE]. Selected work in product design, design systems, and fintech UX.",
+    "ogImage": "/images/og-cover.svg"
+  }
+}

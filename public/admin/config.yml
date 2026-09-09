@@ -1,0 +1,114 @@
+backend:
+  name: github
+  repo: "[GITHUB_USERNAME]/[GITHUB_REPOSITORY]"
+  branch: main
+  base_url: "[SITE_URL]"
+  auth_endpoint: api/auth
+
+publish_mode: simple
+media_folder: "public/images/uploads"
+public_folder: "/images/uploads"
+
+collections:
+  - name: "projects"
+    label: "Projects"
+    folder: "content/projects"
+    create: true
+    delete: true
+    slug: "{{slug}}"
+    summary: "{{title}} — {{year}}"
+    sortable_fields: ["order", "year", "title"]
+    fields:
+      - { label: "Title", name: "title", widget: "string" }
+      - { label: "Slug", name: "slug", widget: "string", hint: "Used in the project URL — lowercase, hyphenated." }
+      - { label: "Role", name: "role", widget: "string" }
+      - { label: "Year", name: "year", widget: "string" }
+      - { label: "Tools", name: "tools", widget: "list", default: [] }
+      - { label: "Tags", name: "tags", widget: "list", default: [] }
+      - { label: "Featured", name: "featured", widget: "boolean", default: false }
+      - { label: "Order", name: "order", widget: "number", default: 99, hint: "Lower numbers sort first." }
+      - { label: "Cover image", name: "cover", widget: "image" }
+      - { label: "Gallery", name: "gallery", widget: "list", field: { label: "Image", name: "image", widget: "image" } }
+      - { label: "Summary", name: "summary", widget: "text" }
+      - { label: "Challenge", name: "challenge", widget: "text" }
+      - { label: "Solution", name: "solution", widget: "text" }
+      - { label: "Outcomes", name: "outcomes", widget: "list", default: [] }
+      - label: "Links"
+        name: "links"
+        widget: "list"
+        default: []
+        fields:
+          - { label: "Label", name: "label", widget: "string" }
+          - { label: "URL", name: "url", widget: "string" }
+      - { label: "Body", name: "body", widget: "markdown", required: false }
+
+  - name: "about"
+    label: "About"
+    files:
+      - name: "about"
+        label: "About Page"
+        file: "content/about/about.md"
+        fields:
+          - { label: "Title", name: "title", widget: "string", default: "About" }
+          - { label: "Portrait", name: "portrait", widget: "image" }
+          - { label: "Skills", name: "skills", widget: "list", default: [] }
+          - label: "Experience"
+            name: "experience"
+            widget: "list"
+            default: []
+            fields:
+              - { label: "Role", name: "role", widget: "string" }
+              - { label: "Organization", name: "org", widget: "string" }
+              - { label: "Period", name: "period", widget: "string" }
+              - { label: "Description", name: "description", widget: "text" }
+          - { label: "Biography", name: "body", widget: "markdown" }
+
+  - name: "settings"
+    label: "Site Settings"
+    files:
+      - name: "site"
+        label: "General"
+        file: "content/settings/site.json"
+        fields:
+          - { label: "Name", name: "name", widget: "string" }
+          - { label: "Role", name: "role", widget: "string" }
+          - { label: "Statement", name: "statement", widget: "text" }
+          - { label: "Email", name: "email", widget: "string" }
+          - { label: "Resume URL", name: "resumeUrl", widget: "string" }
+          - label: "Navigation"
+            name: "nav"
+            widget: "list"
+            fields:
+              - { label: "Label", name: "label", widget: "string" }
+              - { label: "Href", name: "href", widget: "string" }
+          - label: "Social links"
+            name: "social"
+            widget: "list"
+            fields:
+              - { label: "Label", name: "label", widget: "string" }
+              - { label: "URL", name: "url", widget: "string" }
+          - label: "Services"
+            name: "services"
+            widget: "list"
+            fields:
+              - { label: "Title", name: "title", widget: "string" }
+              - { label: "Description", name: "description", widget: "text" }
+          - label: "SEO"
+            name: "seo"
+            widget: "object"
+            fields:
+              - { label: "Title", name: "title", widget: "string" }
+              - { label: "Description", name: "description", widget: "text" }
+              - { label: "OG Image", name: "ogImage", widget: "image" }
+
+  - name: "journal"
+    label: "Writing"
+    folder: "content/journal"
+    create: true
+    delete: true
+    slug: "{{year}}-{{month}}-{{day}}-{{slug}}"
+    fields:
+      - { label: "Title", name: "title", widget: "string" }
+      - { label: "Date", name: "date", widget: "datetime" }
+      - { label: "Summary", name: "summary", widget: "text", required: false }
+      - { label: "Body", name: "body", widget: "markdown" }
