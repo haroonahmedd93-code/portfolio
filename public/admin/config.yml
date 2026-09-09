@@ -1,8 +1,8 @@
 backend:
   name: github
-  repo: "[GITHUB_USERNAME]/[GITHUB_REPOSITORY]"
+  repo: "haroonahmedd93-code/portfolio"
   branch: main
-  base_url: "[SITE_URL]"
+  base_url: "https://portfolio-one-kohl-91.vercel.app"
   auth_endpoint: api/auth
 
 publish_mode: simple
