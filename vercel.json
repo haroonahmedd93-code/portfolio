@@ -1,6 +1,7 @@
 {
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
+  "trailingSlash": true,
   "functions": {
     "api/*.js": {
       "maxDuration": 10

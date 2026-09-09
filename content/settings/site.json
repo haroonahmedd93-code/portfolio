@@ -1,8 +1,8 @@
 {
-  "name": "[YOUR_NAME]",
-  "role": "[YOUR_ROLE]",
+  "name": "Haroon Ahmed Butt",
+  "role": "Senior Product Designer",
   "statement": "I design and build interfaces that feel considered — from fintech risk controls to marketplace products used by millions.",
-  "email": "[YOUR_EMAIL]",
+  "email": "habutt@gmail.com",
   "resumeUrl": "/resume.pdf",
   "nav": [
     { "label": "Work", "href": "/projects/" },
@@ -10,9 +10,8 @@
     { "label": "Contact", "href": "/contact/" }
   ],
   "social": [
-    { "label": "GitHub", "url": "https://github.com/[GITHUB_USERNAME]" },
-    { "label": "LinkedIn", "url": "https://linkedin.com/in/[GITHUB_USERNAME]" },
-    { "label": "Email", "url": "mailto:[YOUR_EMAIL]" }
+    { "label": "GitHub", "url": "https://github.com/haroonahmedd93-code" },
+    { "label": "Email", "url": "mailto:habutt@gmail.com" }
   ],
   "services": [
     {
@@ -29,8 +28,8 @@
     }
   ],
   "seo": {
-    "title": "[YOUR_NAME] — [YOUR_ROLE]",
-    "description": "Portfolio of [YOUR_NAME], [YOUR_ROLE]. Selected work in product design, design systems, and fintech UX.",
+    "title": "Haroon Ahmed Butt — Senior Product Designer",
+    "description": "Portfolio of Haroon Ahmed Butt, Senior Product Designer. Selected work in product design, design systems, and fintech UX.",
     "ogImage": "/images/og-cover.svg"
   }
 }
