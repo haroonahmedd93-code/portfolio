@@ -3,6 +3,8 @@ import { renderSelectedProjects } from '../modules/selectedProjects.js';
 import { getContent } from '../modules/content.js';
 import { initHeroIntro } from '../modules/revealAnimations.js';
 import { shouldRunHeroScene, prefersReducedMotion } from '../three/capability.js';
+import { initGalleryList } from '../modules/galleryList.js';
+import { navigateWithFade } from '../modules/pageTransition.js';
 
 async function renderHeroText() {
   const { site } = await getContent();
@@ -45,9 +47,22 @@ async function bootHero() {
   }
 
   try {
-    const { createHeroScene } = await import('../three/heroScene.js');
-    const scene = createHeroScene(canvas);
+    const [{ createHeroScene }, { projects }] = await Promise.all([
+      import('../three/heroScene.js'),
+      getContent(),
+    ]);
+    const scene = createHeroScene(canvas, projects, (slug) =>
+      navigateWithFade(`/projects/project.html?slug=${encodeURIComponent(slug)}`)
+    );
     window.addEventListener('beforeunload', () => scene.dispose());
+
+    initGalleryList({
+      projects,
+      canvasWrap: document.getElementById('hero-canvas-wrap'),
+      listEl: document.getElementById('gallery-list'),
+      sphereBtn: document.getElementById('gallery-sphere-btn'),
+      listBtn: document.getElementById('gallery-list-btn'),
+    });
   } catch (err) {
     console.warn('Hero scene failed to initialize, falling back.', err);
     if (fallback) fallback.hidden = false;

@@ -1,9 +1,11 @@
 import * as THREE from 'three';
 
-// A draggable "drum" of curved gradient panels arranged in a circle around the
-// viewer — an original take on the classic WebGL cylindrical-gallery technique
-// (drag/spin a ring of cards). Panels are procedurally generated gradients,
-// never sourced or scraped imagery. Fully torn down via dispose().
+// A "look around from inside a sphere" gallery: panels are distributed evenly
+// over a sphere (Fibonacci/golden-spiral distribution) facing the center.
+// Drag rotates the camera's look direction with a lerped, lenis-style trailing
+// ease plus momentum after release. Click (vs. drag) raycasts into the panels
+// and reports the hit project's slug via onSelect. Panels are procedurally
+// generated gradient textures — never sourced or scraped imagery.
 const GRADIENT_PAIRS = [
   ['#8a8fff', '#f2b880'],
   ['#f2b880', '#f28a8a'],
@@ -13,47 +15,31 @@ const GRADIENT_PAIRS = [
   ['#d9baff', '#6a6aff'],
 ];
 
-function makeGradientTexture(colorA, colorB, angleDeg = 135) {
+function makeGradientTexture(colorA, colorB, label) {
   const size = 512;
   const canvas = document.createElement('canvas');
   canvas.width = size;
   canvas.height = size;
   const ctx = canvas.getContext('2d');
-  const rad = (angleDeg * Math.PI) / 180;
-  const x0 = size / 2 - (Math.cos(rad) * size) / 2;
-  const y0 = size / 2 - (Math.sin(rad) * size) / 2;
-  const x1 = size / 2 + (Math.cos(rad) * size) / 2;
-  const y1 = size / 2 + (Math.sin(rad) * size) / 2;
-  const grad = ctx.createLinearGradient(x0, y0, x1, y1);
+  const grad = ctx.createLinearGradient(0, 0, size, size);
   grad.addColorStop(0, colorA);
   grad.addColorStop(1, colorB);
   ctx.fillStyle = grad;
   ctx.fillRect(0, 0, size, size);
+  if (label) {
+    ctx.fillStyle = 'rgba(11,11,15,0.55)';
+    ctx.fillRect(0, size - 96, size, 96);
+    ctx.fillStyle = '#f5f5f2';
+    ctx.font = '600 34px "Bricolage Grotesque", sans-serif';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(label.slice(0, 22), 24, size - 48);
+  }
   const texture = new THREE.CanvasTexture(canvas);
   texture.colorSpace = THREE.SRGBColorSpace;
   return texture;
 }
 
-// Bends a plane's vertices along an arc so each panel reads as a curved
-// surface, like a strip cut from the wall of a cylinder.
-function buildCurvedPanelGeometry(width, height, bendRadians) {
-  const segments = 24;
-  const geometry = new THREE.PlaneGeometry(width, height, segments, 1);
-  const pos = geometry.attributes.position;
-  const bendRadius = width / bendRadians;
-  for (let i = 0; i < pos.count; i++) {
-    const x = pos.getX(i);
-    const theta = (x / (width / 2)) * (bendRadians / 2);
-    const newX = bendRadius * Math.sin(theta);
-    const newZ = bendRadius * (Math.cos(theta) - 1);
-    pos.setX(i, newX);
-    pos.setZ(i, newZ);
-  }
-  geometry.computeVertexNormals();
-  return geometry;
-}
-
-export function createHeroScene(canvas) {
+export function createHeroScene(canvas, projects = [], onSelect = () => {}) {
   const renderer = new THREE.WebGLRenderer({
     canvas,
     antialias: true,
@@ -63,50 +49,61 @@ export function createHeroScene(canvas) {
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.75));
 
   const scene = new THREE.Scene();
-  const camera = new THREE.PerspectiveCamera(70, 1, 0.1, 100);
+  const camera = new THREE.PerspectiveCamera(72, 1, 0.05, 100);
   camera.position.set(0, 0, 0);
+  camera.rotation.order = 'YXZ';
 
-  const drum = new THREE.Group();
-  scene.add(drum);
-
-  const RADIUS = 9.5;
-  const PANEL_COUNT = 18;
+  const RADIUS = 5.5;
+  const COUNT = 44;
   const geometries = [];
   const materials = [];
   const textures = [];
+  const meshes = [];
+  const golden = Math.PI * (3 - Math.sqrt(5));
 
-  for (let i = 0; i < PANEL_COUNT; i++) {
-    const angle = (i / PANEL_COUNT) * Math.PI * 2;
-    const wide = i % 3 === 0;
-    const panelWidth = wide ? 2.1 : 1.5;
-    const panelHeight = wide ? 1.4 : 2.1;
+  for (let i = 0; i < COUNT; i++) {
+    const project = projects.length ? projects[i % projects.length] : null;
     const [colorA, colorB] = GRADIENT_PAIRS[i % GRADIENT_PAIRS.length];
-    const texture = makeGradientTexture(colorA, colorB);
-    const geometry = buildCurvedPanelGeometry(panelWidth, panelHeight, 0.35);
-    const material = new THREE.MeshBasicMaterial({ map: texture, side: THREE.DoubleSide, transparent: true, opacity: 0.92 });
+    const texture = makeGradientTexture(colorA, colorB, project ? project.title : null);
+    const wide = i % 4 === 0;
+    const w = wide ? 1.8 : 1.25;
+    const h = wide ? 1.15 : 1.7;
+    const geometry = new THREE.PlaneGeometry(w, h);
+    const material = new THREE.MeshBasicMaterial({ map: texture, side: THREE.DoubleSide });
     const mesh = new THREE.Mesh(geometry, material);
 
-    // Deterministic pseudo-random vertical scatter (golden-angle spacing avoids
-    // any two panels lining up) so the drum reads as organically arranged.
-    const yOffset = Math.sin(i * 2.399963) * 3.4;
-    const radiusJitter = (Math.cos(i * 1.732) * 0.5) * 0.6;
-    const r = RADIUS + radiusJitter;
+    const y = 1 - (i / (COUNT - 1)) * 2;
+    const radiusAtY = Math.sqrt(Math.max(0, 1 - y * y));
+    const theta = golden * i;
+    mesh.position.set(
+      Math.cos(theta) * radiusAtY * RADIUS,
+      y * RADIUS,
+      Math.sin(theta) * radiusAtY * RADIUS
+    );
+    mesh.lookAt(0, 0, 0);
+    mesh.userData.slug = project ? project.slug : null;
 
-    mesh.position.set(Math.sin(angle) * r, yOffset, -Math.cos(angle) * r);
-    mesh.rotation.y = angle;
-
-    drum.add(mesh);
+    scene.add(mesh);
+    meshes.push(mesh);
     geometries.push(geometry);
     materials.push(material);
     textures.push(texture);
   }
 
+  const raycaster = new THREE.Raycaster();
   const state = {
     dragging: false,
+    startX: 0,
+    startY: 0,
     lastX: 0,
-    velocity: 0,
-    rotation: 0,
-    idleSpin: 0.035,
+    lastY: 0,
+    dragDist: 0,
+    yaw: 0,
+    pitch: 0,
+    targetYaw: 0,
+    targetPitch: 0,
+    velYaw: 0,
+    velPitch: 0,
   };
   let frameId = null;
   let destroyed = false;
@@ -120,47 +117,75 @@ export function createHeroScene(canvas) {
     camera.updateProjectionMatrix();
   }
 
+  function clampPitch(p) {
+    return Math.max(-1.1, Math.min(1.1, p));
+  }
+
   function onPointerDown(e) {
     state.dragging = true;
-    state.lastX = e.clientX;
-    state.velocity = 0;
+    state.dragDist = 0;
+    state.startX = state.lastX = e.clientX;
+    state.startY = state.lastY = e.clientY;
+    state.velYaw = 0;
+    state.velPitch = 0;
     canvas.style.cursor = 'grabbing';
   }
 
   function onPointerMove(e) {
     if (!state.dragging) return;
     const dx = e.clientX - state.lastX;
+    const dy = e.clientY - state.lastY;
     state.lastX = e.clientX;
-    const delta = dx * 0.0045;
-    state.rotation += delta;
-    state.velocity = delta;
+    state.lastY = e.clientY;
+    state.dragDist += Math.abs(dx) + Math.abs(dy);
+    const sens = 0.0035;
+    state.velYaw = dx * sens;
+    state.velPitch = dy * sens;
+    state.targetYaw -= state.velYaw;
+    state.targetPitch = clampPitch(state.targetPitch - state.velPitch);
   }
 
-  function endDrag() {
+  function handleClick(clientX, clientY) {
+    const rect = canvas.getBoundingClientRect();
+    const ndc = new THREE.Vector2(
+      ((clientX - rect.left) / rect.width) * 2 - 1,
+      -((clientY - rect.top) / rect.height) * 2 + 1
+    );
+    raycaster.setFromCamera(ndc, camera);
+    const hits = raycaster.intersectObjects(meshes, false);
+    if (hits.length) {
+      const slug = hits[0].object.userData.slug;
+      if (slug) onSelect(slug);
+    }
+  }
+
+  function onPointerUp(e) {
+    if (!state.dragging) return;
     state.dragging = false;
     canvas.style.cursor = 'grab';
-  }
-
-  function resolveMotion(dt) {
-    if (state.dragging) return;
-    // Momentum decays smoothly, then a slow idle auto-spin takes over.
-    state.velocity *= 0.94;
-    if (Math.abs(state.velocity) > 0.00005) {
-      state.rotation += state.velocity;
-    } else {
-      state.rotation += state.idleSpin * dt;
-    }
+    if (state.dragDist < 6) handleClick(e.clientX, e.clientY);
   }
 
   const clock = new THREE.Clock();
   canvas.style.cursor = 'grab';
-  canvas.style.touchAction = 'pan-y';
+  canvas.style.touchAction = 'none';
 
   function tick() {
     if (destroyed) return;
-    const dt = clock.getDelta();
-    resolveMotion(dt);
-    drum.rotation.y = state.rotation;
+    const dt = Math.min(clock.getDelta(), 0.05);
+    if (!state.dragging) {
+      // Momentum decay, then settle — the "lenis" trailing feel.
+      state.velYaw *= 0.92;
+      state.velPitch *= 0.92;
+      state.targetYaw -= state.velYaw * 0.4;
+      state.targetPitch = clampPitch(state.targetPitch - state.velPitch * 0.4);
+      state.targetYaw -= 0.015 * dt; // gentle idle drift
+    }
+    state.yaw += (state.targetYaw - state.yaw) * Math.min(1, dt * 6);
+    state.pitch += (state.targetPitch - state.pitch) * Math.min(1, dt * 6);
+    camera.rotation.y = state.yaw;
+    camera.rotation.x = state.pitch;
+
     renderer.render(scene, camera);
     frameId = requestAnimationFrame(tick);
   }
@@ -169,8 +194,8 @@ export function createHeroScene(canvas) {
   window.addEventListener('resize', resize);
   canvas.addEventListener('pointerdown', onPointerDown);
   window.addEventListener('pointermove', onPointerMove);
-  window.addEventListener('pointerup', endDrag);
-  window.addEventListener('pointercancel', endDrag);
+  window.addEventListener('pointerup', onPointerUp);
+  window.addEventListener('pointercancel', onPointerUp);
   tick();
 
   return {
@@ -180,8 +205,8 @@ export function createHeroScene(canvas) {
       window.removeEventListener('resize', resize);
       canvas.removeEventListener('pointerdown', onPointerDown);
       window.removeEventListener('pointermove', onPointerMove);
-      window.removeEventListener('pointerup', endDrag);
-      window.removeEventListener('pointercancel', endDrag);
+      window.removeEventListener('pointerup', onPointerUp);
+      window.removeEventListener('pointercancel', onPointerUp);
       geometries.forEach((g) => g.dispose());
       materials.forEach((m) => m.dispose());
       textures.forEach((t) => t.dispose());

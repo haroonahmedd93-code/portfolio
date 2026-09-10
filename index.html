@@ -18,9 +18,14 @@
 
   <main id="main">
     <section class="hero">
-      <div class="hero__canvas-wrap" aria-hidden="true">
+      <div class="hero__canvas-wrap" id="hero-canvas-wrap">
         <canvas id="hero-canvas"></canvas>
         <div id="hero-fallback" hidden style="position:absolute;inset:0;background:radial-gradient(circle at 30% 20%, rgba(138,143,255,0.18), transparent 55%), radial-gradient(circle at 75% 70%, rgba(242,184,128,0.14), transparent 60%);"></div>
+      </div>
+      <div class="gallery-list" id="gallery-list" hidden></div>
+      <div class="gallery-view-toggle" role="group" aria-label="Gallery view">
+        <button type="button" id="gallery-sphere-btn" aria-pressed="true">Gallery</button>
+        <button type="button" id="gallery-list-btn" aria-pressed="false">List</button>
       </div>
       <div class="wrap hero__content">
         <p class="hero__eyebrow" id="hero-role">[YOUR_ROLE]</p>
