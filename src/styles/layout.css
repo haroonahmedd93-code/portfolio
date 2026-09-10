@@ -11,15 +11,18 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: var(--space-md) var(--gutter);
-  background: rgba(11, 11, 15, 0.72);
-  backdrop-filter: blur(10px);
-  border-bottom: 1px solid var(--color-border);
+  padding: var(--space-sm) var(--gutter);
+  background: rgba(11, 11, 15, 0.55);
+  backdrop-filter: blur(8px);
+  border-bottom: none;
 }
 
 .site-nav__brand {
   font-family: var(--font-display);
-  font-size: var(--fs-md);
+  font-weight: 600;
+  font-size: var(--fs-sm);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
 }
 
 .site-nav__links {

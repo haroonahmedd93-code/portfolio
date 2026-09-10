@@ -12,7 +12,7 @@
   --color-focus: #8a8fff;
 
   /* Typography */
-  --font-display: "Fraunces", "Iowan Old Style", "Georgia", serif;
+  --font-display: "Bricolage Grotesque", "Helvetica Neue", Arial, sans-serif;
   --font-body: "Inter", "Helvetica Neue", Arial, sans-serif;
   --font-mono: "IBM Plex Mono", "SFMono-Regular", Consolas, monospace;
 
@@ -24,9 +24,10 @@
   --fs-xl: clamp(1.8rem, 1.4rem + 2vw, 2.6rem);
   --fs-2xl: clamp(2.4rem, 1.7rem + 3.5vw, 4rem);
   --fs-3xl: clamp(3rem, 2rem + 5vw, 6.4rem);
+  --fs-4xl: clamp(3.6rem, 1.5rem + 11vw, 11rem);
 
-  --lh-tight: 1.05;
-  --lh-snug: 1.25;
+  --lh-tight: 0.94;
+  --lh-snug: 1.2;
   --lh-normal: 1.55;
 
   /* Spacing scale */

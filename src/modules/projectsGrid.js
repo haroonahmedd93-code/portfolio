@@ -1,12 +1,10 @@
 import { getContent } from './content.js';
 import { initRevealAnimations } from './revealAnimations.js';
+import { gradientClass } from './gradient.js';
 
-function cardMarkup(project) {
+function cardMarkup(project, i) {
   return `
     <a class="project-card" href="/projects/project.html?slug=${encodeURIComponent(project.slug)}" data-reveal data-reveal-group>
-      <div class="project-card__media">
-        <img src="${project.cover}" alt="" loading="lazy" width="1600" height="1000" />
-      </div>
       <div class="project-card__body">
         <h3 class="project-card__title">${project.title}</h3>
         <p class="project-card__meta">${project.role} · ${project.year}</p>
@@ -14,6 +12,7 @@ function cardMarkup(project) {
           ${(project.tags || []).map((t) => `<span class="tag">${t}</span>`).join('')}
         </div>
       </div>
+      <div class="project-card__media ${gradientClass(project.slug, i)}" aria-hidden="true"></div>
     </a>
   `;
 }

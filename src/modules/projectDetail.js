@@ -1,11 +1,13 @@
 import { getContent } from './content.js';
 import { initRevealAnimations } from './revealAnimations.js';
+import { gradientClass } from './gradient.js';
 
-function galleryMarkup(images) {
-  return (images || [])
+function galleryMarkup(images, slug) {
+  const count = images && images.length ? images.length : 2;
+  return Array.from({ length: count })
     .map(
-      (src, i) =>
-        `<img src="${src}" alt="" loading="${i === 0 ? 'eager' : 'lazy'}" width="1600" height="1000" data-reveal />`
+      (_, i) =>
+        `<div class="detail-gallery__frame ${gradientClass(`${slug || 'project'}-${i}`, i)}" data-reveal aria-hidden="true"></div>`
     )
     .join('');
 }
@@ -49,7 +51,7 @@ export async function initProjectDetail() {
       </div>
     </header>
 
-    <div class="detail-gallery">${galleryMarkup(project.gallery)}</div>
+    <div class="detail-gallery">${galleryMarkup(project.gallery, project.slug)}</div>
 
     <div class="detail-body">
       <section data-reveal>
