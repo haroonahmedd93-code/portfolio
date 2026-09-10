@@ -54,6 +54,12 @@
   display: grid;
   gap: var(--space-md);
   max-width: 46rem;
+  pointer-events: none;
+}
+
+.hero__content a,
+.hero__content button {
+  pointer-events: auto;
 }
 
 .hero__eyebrow {
