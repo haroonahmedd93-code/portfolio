@@ -76,7 +76,7 @@ function avgColor(a, b) {
 export function createHeroScene(canvas, projects = [], hooks = {}) {
   const { onSelect = () => {}, onFocus = () => {}, onHover = () => {} } = hooks;
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true, powerPreference: 'high-performance' });
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
   const scene = new THREE.Scene();
   const camera = new THREE.PerspectiveCamera(52, 1, 0.05, 50);
   camera.rotation.order = 'YXZ';
@@ -138,25 +138,29 @@ export function createHeroScene(canvas, projects = [], hooks = {}) {
 
   const raycaster = new THREE.Raycaster();
   const st = {
-    dragging: false, lastX: 0, lastY: 0, dist: 0,
-    yaw: 0, pitch: 0, tYaw: 0, tPitch: 0, vYaw: 0, vPitch: 0,
-    focused: null, hovered: null, idle: 0,
+    dragging: false, lastX: 0, lastY: 0, lastT: 0, dist: 0,
+    yaw: 0, pitch: 0, tYaw: 0, tPitch: 0,
+    vYaw: 0, vPitch: 0,           // inertia velocity (rad/s)
+    px: 0, py: 0, pointerMoved: false,
+    focused: null, hovered: null, idle: 0, lastY: -1,
   };
   let frame = null;
   let dead = false;
   const fwd = new THREE.Vector3();
   const ndc = new THREE.Vector2();
   const proj = new THREE.Vector3();
+  const SENS = 0.0028;            // rad per px
+  const FOLLOW = 9;               // higher = tighter follow while dragging
+  const FRICTION = 2.6;           // inertia decay per second
 
   function resize() {
     const r = canvas.parentElement.getBoundingClientRect();
     renderer.setSize(r.width, r.height, false);
     camera.aspect = r.width / r.height;
-    // Widen the view on narrow/portrait viewports so panels keep a similar on-screen size.
     camera.fov = camera.aspect >= 1.4 ? 52 : camera.aspect >= 1 ? 62 : 80;
     camera.updateProjectionMatrix();
   }
-  const clampP = (p) => Math.max(-0.75, Math.min(0.75, p));
+  const clampP = (p) => Math.max(-0.5, Math.min(0.5, p));
 
   function pick(x, y) {
     const r = canvas.getBoundingClientRect();
@@ -167,34 +171,35 @@ export function createHeroScene(canvas, projects = [], hooks = {}) {
   }
 
   function onDown(e) {
-    st.dragging = true; st.dist = 0; st.lastX = e.clientX; st.lastY = e.clientY;
+    if (e.button !== undefined && e.button !== 0) return;
+    st.dragging = true; st.dist = 0;
+    st.lastX = e.clientX; st.lastY = e.clientY; st.lastT = performance.now();
     st.vYaw = 0; st.vPitch = 0; st.idle = 0;
+    canvas.setPointerCapture?.(e.pointerId);
     canvas.style.cursor = 'grabbing';
+    if (st.hovered) { st.hovered = null; onHover(null); }
   }
   function onMove(e) {
-    if (st.dragging) {
-      const dx = e.clientX - st.lastX; const dy = e.clientY - st.lastY;
-      st.lastX = e.clientX; st.lastY = e.clientY;
-      st.dist += Math.abs(dx) + Math.abs(dy);
-      const s = 0.0032;
-      st.vYaw = dx * s; st.vPitch = dy * s;
-      st.tYaw -= st.vYaw;
-      st.tPitch = clampP(st.tPitch - st.vPitch);
-      if (st.hovered) { st.hovered = null; onHover(null); }
-      return;
-    }
-    const m = pick(e.clientX, e.clientY);
-    const h = m && m === st.focused ? m : null;
-    if (h !== st.hovered) {
-      st.hovered = h;
-      canvas.style.cursor = h ? 'pointer' : 'grab';
-      onHover(h ? h.userData.project : null);
-    }
+    st.px = e.clientX; st.py = e.clientY; st.pointerMoved = true;
+    if (!st.dragging) return;
+    const now = performance.now();
+    const dx = e.clientX - st.lastX; const dy = e.clientY - st.lastY;
+    const dtMs = Math.max(1, now - st.lastT);
+    st.lastX = e.clientX; st.lastY = e.clientY; st.lastT = now;
+    st.dist += Math.abs(dx) + Math.abs(dy);
+    st.tYaw -= dx * SENS;
+    st.tPitch = clampP(st.tPitch - dy * SENS * 0.7);
+    // Smoothed release velocity (rad/s), so a flick carries momentum.
+    const iv = 1000 / dtMs;
+    st.vYaw += ((-dx * SENS * iv) - st.vYaw) * 0.35;
+    st.vPitch += ((-dy * SENS * 0.7 * iv) - st.vPitch) * 0.35;
   }
   function onUp(e) {
     if (!st.dragging) return;
     st.dragging = false; st.idle = 0;
+    canvas.releasePointerCapture?.(e.pointerId);
     canvas.style.cursor = 'grab';
+    if (performance.now() - st.lastT > 80) { st.vYaw = 0; st.vPitch = 0; }
     if (st.dist < 6) {
       const m = pick(e.clientX, e.clientY);
       if (m && m.userData.project) onSelect(m.userData.project.slug);
@@ -209,13 +214,16 @@ export function createHeroScene(canvas, projects = [], hooks = {}) {
     if (dead) return;
     const dt = Math.min(clock.getDelta(), 0.05);
     if (!st.dragging) {
-      st.vYaw *= 0.93; st.vPitch *= 0.93;
-      st.tYaw -= st.vYaw * 0.5;
-      st.tPitch = clampP(st.tPitch - st.vPitch * 0.5);
+      const decay = Math.exp(-FRICTION * dt);
+      st.tYaw += st.vYaw * dt;
+      st.tPitch = clampP(st.tPitch + st.vPitch * dt);
+      st.vYaw *= decay; st.vPitch *= decay;
+      if (Math.abs(st.vYaw) < 1e-4) st.vYaw = 0;
+      if (Math.abs(st.vPitch) < 1e-4) st.vPitch = 0;
       st.idle += dt;
-      if (st.idle > 2.5) st.tYaw -= 0.02 * dt; // gentle drift when idle
+      if (st.idle > 3) st.tYaw -= 0.02 * dt;
     }
-    const k = 1 - Math.exp(-dt * 5.5);
+    const k = 1 - Math.exp(-dt * (st.dragging ? FOLLOW : 6));
     st.yaw += (st.tYaw - st.yaw) * k;
     st.pitch += (st.tPitch - st.pitch) * k;
     camera.rotation.set(st.pitch, st.yaw, 0);
@@ -227,25 +235,35 @@ export function createHeroScene(canvas, projects = [], hooks = {}) {
       const d = m.userData.dir.dot(fwd);
       if (d > bestDot) { bestDot = d; best = m; }
     }
+    let y = null;
+    if (best) {
+      proj.copy(best.userData.dir).multiplyScalar(R).project(camera);
+      y = Math.round(((1 - proj.y) / 2) * 1000) / 1000;
+    }
     if (best !== st.focused) {
       st.focused = best;
-      if (st.hovered && st.hovered !== best) { st.hovered = null; onHover(null); canvas.style.cursor = 'grab'; }
-      let y = null;
-      if (best) {
-        proj.copy(best.userData.dir).multiplyScalar(R).project(camera);
-        y = (1 - proj.y) / 2;
-      }
+      st.lastY = y;
       onFocus(best ? best.userData.project : null, best ? best.userData.tint : null, y);
-    } else if (best) {
-      proj.copy(best.userData.dir).multiplyScalar(R).project(camera);
-      onFocus(best.userData.project, best.userData.tint, (1 - proj.y) / 2, true);
+    } else if (best && y !== st.lastY) {
+      st.lastY = y;
+      onFocus(best.userData.project, best.userData.tint, y, true);
+    }
+    // Hover raycast at most once per frame, only when the pointer moved.
+    if (st.pointerMoved && !st.dragging) {
+      st.pointerMoved = false;
+      const m = pick(st.px, st.py);
+      const h = m && m === best ? m : null;
+      if (h !== st.hovered) {
+        st.hovered = h;
+        canvas.style.cursor = h ? 'pointer' : 'grab';
+        onHover(h ? h.userData.project : null);
+      }
     }
     for (const m of meshes) {
       const target = m === best ? 1 : 0;
-      m.userData.focus += (target - m.userData.focus) * Math.min(1, dt * 7);
-      m.material.uniforms.uFocus.value = m.userData.focus;
-      const sc = 1 - m.userData.focus * 0.06; // pull focused panel slightly toward camera
-      m.scale.setScalar(sc);
+      const f = m.userData.focus += (target - m.userData.focus) * Math.min(1, dt * 7);
+      m.material.uniforms.uFocus.value = f;
+      m.scale.setScalar(1 - f * 0.06);
     }
     renderer.render(scene, camera);
     frame = requestAnimationFrame(tick);
@@ -254,9 +272,11 @@ export function createHeroScene(canvas, projects = [], hooks = {}) {
   resize();
   window.addEventListener('resize', resize);
   canvas.addEventListener('pointerdown', onDown);
-  window.addEventListener('pointermove', onMove);
+  window.addEventListener('pointermove', onMove, { passive: true });
   window.addEventListener('pointerup', onUp);
   window.addEventListener('pointercancel', onUp);
+  canvas.addEventListener('dragstart', (e) => e.preventDefault());
+  canvas.addEventListener('contextmenu', (e) => e.preventDefault());
   tick();
 
   return {

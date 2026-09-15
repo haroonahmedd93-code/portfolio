@@ -61,7 +61,7 @@ async function bootStage() {
     const scene = createHeroScene(canvas, projects, {
       onSelect: (slug) => navigateWithFade(`/projects/project.html?slug=${encodeURIComponent(slug)}`),
       onFocus: (project, tint, y, positionOnly) => {
-        if (y != null) labels.style.setProperty('--y', `${(y * 100).toFixed(2)}%`);
+        if (y != null) labels.style.transform = `translate3d(0, ${(y * labels.parentElement.clientHeight).toFixed(1)}px, 0) translateY(-50%)`;
         if (positionOnly) return;
         if (project !== current) {
           current = project;
