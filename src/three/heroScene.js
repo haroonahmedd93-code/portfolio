@@ -1,9 +1,10 @@
 import * as THREE from 'three';
 
-// Sphere-interior gallery. The camera sits at the origin; project panels are
-// curved patches of the sphere surface around it. Drag to look around with a
-// trailing (lenis-style) lerp + inertia. The panel nearest the view centre is
-// "focused": full colour and slightly scaled, everything else grayscale + dim.
+// Cylinder "twirl" gallery. The camera sits on the axis of a cylinder; project
+// panels are curved cylinder segments laid out on a helix. One scroll value `s`
+// (in panel units) drives a screw motion: panels rotate around the axis and rise
+// at the same time, so each one in turn arrives front-and-centre. Drag (either
+// axis), wheel and touch all feed `s` through a trailing lerp + inertia.
 
 const PALETTES = [
   ['#8a8fff', '#f2b880'],
@@ -27,7 +28,6 @@ function makeTexture(colorA, colorB, seed) {
   grad.addColorStop(1, colorB);
   ctx.fillStyle = grad;
   ctx.fillRect(0, 0, size, size);
-  // A few soft procedural shapes so panels read as "images", not flat fills.
   let s = seed * 9301 + 49297;
   const rnd = () => ((s = (s * 9301 + 49297) % 233280) / 233280);
   for (let i = 0; i < 5; i++) {
@@ -61,9 +61,8 @@ const frag = /* glsl */ `
   void main() {
     vec4 c = texture2D(uTex, vec2(1.0 - vUv.x, vUv.y));
     float g = dot(c.rgb, vec3(0.299, 0.587, 0.114));
-    vec3 gray = vec3(g) * 0.55;
-    vec3 col = mix(gray, c.rgb, uFocus);
-    gl_FragColor = vec4(col, 1.0);
+    vec3 gray = vec3(g) * 0.5;
+    gl_FragColor = vec4(mix(gray, c.rgb, uFocus), 1.0);
   }
 `;
 
@@ -78,89 +77,66 @@ export function createHeroScene(canvas, projects = [], hooks = {}) {
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true, powerPreference: 'high-performance' });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
   const scene = new THREE.Scene();
-  const camera = new THREE.PerspectiveCamera(52, 1, 0.05, 50);
-  camera.rotation.order = 'YXZ';
+  const camera = new THREE.PerspectiveCamera(60, 1, 0.05, 50);
+  camera.position.set(0, 0, 0);
 
-  const R = 6;
+  // Helix layout ---------------------------------------------------------
+  const R = 6;                       // cylinder radius
+  const PER_TURN = 18;               // panels per full revolution
+  const DA = (Math.PI * 2) / PER_TURN;
+  const DY = 0.115;                  // vertical rise per panel
+  const COUNT = Math.max(72, projects.length * 24);
+  const PANEL_H = 1.4;
+  const PANEL_ARC = 0.31;            // radians of cylinder the panel covers
+
   const meshes = [];
   const disposables = [];
+  for (let i = 0; i < COUNT; i++) {
+    const project = projects.length ? projects[i % projects.length] : null;
+    const [ca, cb] = PALETTES[i % PALETTES.length];
+    const tex = makeTexture(ca, cb, i + 1);
+    const arc = PANEL_ARC * (0.9 + ((i * 31) % 10) / 50);
+    const h = PANEL_H * (0.9 + ((i * 17) % 10) / 50);
+    // Open cylinder segment centred on theta = PI, i.e. facing the camera at -Z.
+    const geo = new THREE.CylinderGeometry(R, R, h, 24, 1, true, Math.PI - arc / 2, arc);
+    const mat = new THREE.ShaderMaterial({
+      uniforms: { uTex: { value: tex }, uFocus: { value: 0 } },
+      vertexShader: vert,
+      fragmentShader: frag,
+      side: THREE.BackSide,
+    });
+    const mesh = new THREE.Mesh(geo, mat);
+    mesh.userData = { project, tint: avgColor(ca, cb), focus: 0, i, idx: 0 };
+    scene.add(mesh);
+    meshes.push(mesh);
+    disposables.push(geo, mat, tex);
+  }
 
-  // Layout: latitude bands, each with a ring of panels, offset per band so
-  // panels stagger rather than align in columns.
-  const bands = [
-    { lat: 1.05, count: 9, w: 0.34, h: 0.2 },
-    { lat: 0.62, count: 13, w: 0.27, h: 0.28 },
-    { lat: 0.22, count: 17, w: 0.23, h: 0.26 },
-    { lat: -0.22, count: 17, w: 0.23, h: 0.26 },
-    { lat: -0.62, count: 13, w: 0.27, h: 0.28 },
-    { lat: -1.05, count: 9, w: 0.34, h: 0.2 },
-  ];
-  let idx = 0;
-  bands.forEach((band, bi) => {
-    for (let i = 0; i < band.count; i++) {
-      const project = projects.length ? projects[idx % projects.length] : null;
-      const [ca, cb] = PALETTES[idx % PALETTES.length];
-      const tex = makeTexture(ca, cb, idx + 1);
-      const jitter = ((idx * 7919) % 100) / 100 - 0.5;
-      const lon = (i / band.count) * Math.PI * 2 + bi * 0.37 + jitter * 0.12;
-      const lat = band.lat + jitter * 0.1;
-      const w = band.w * (0.85 + ((idx * 31) % 10) / 30);
-      const h = band.h * (0.85 + ((idx * 17) % 10) / 30);
-      // Patch of the sphere: phi = longitude, theta = polar angle from +Y.
-      const theta0 = Math.PI / 2 - lat - h / 2;
-      const geo = new THREE.SphereGeometry(R, 24, 16, lon - w / 2, w, theta0, h);
-      const mat = new THREE.ShaderMaterial({
-        uniforms: { uTex: { value: tex }, uFocus: { value: 0 } },
-        vertexShader: vert,
-        fragmentShader: frag,
-        side: THREE.BackSide,
-      });
-      const mesh = new THREE.Mesh(geo, mat);
-      // Centre direction for focus tests.
-      const cTheta = theta0 + h / 2;
-      mesh.userData = {
-        project,
-        tint: avgColor(ca, cb),
-        dir: new THREE.Vector3(
-          -Math.cos(lon) * Math.sin(cTheta),
-          Math.cos(cTheta),
-          Math.sin(lon) * Math.sin(cTheta)
-        ).normalize(),
-        focus: 0,
-      };
-      // SphereGeometry places phi=0 at -X; keep dir consistent with that.
-      scene.add(mesh);
-      meshes.push(mesh);
-      disposables.push(geo, mat, tex);
-      idx++;
-    }
-  });
-
-  const raycaster = new THREE.Raycaster();
+  // Interaction state ----------------------------------------------------
   const st = {
+    s: 0, tS: 0, v: 0,               // scroll (panel units), target, velocity (units/s)
     dragging: false, lastX: 0, lastY: 0, lastT: 0, dist: 0,
-    yaw: 0, pitch: 0, tYaw: 0, tPitch: 0,
-    vYaw: 0, vPitch: 0,           // inertia velocity (rad/s)
     px: 0, py: 0, pointerMoved: false,
-    focused: null, hovered: null, idle: 0, lastY: -1,
+    focused: null, hovered: null, idle: 0, lastLabelY: -1,
   };
-  let frame = null;
-  let dead = false;
-  const fwd = new THREE.Vector3();
+  const PX_PER_UNIT_X = 120;         // horizontal px for one panel step
+  const PX_PER_UNIT_Y = 95;          // vertical px for one panel step
+  const FOLLOW = 8;                  // trailing follow rate while dragging
+  const SETTLE = 5;                  // follow rate when coasting
+  const FRICTION = 2.4;              // inertia decay per second
+  const raycaster = new THREE.Raycaster();
   const ndc = new THREE.Vector2();
   const proj = new THREE.Vector3();
-  const SENS = 0.0028;            // rad per px
-  const FOLLOW = 9;               // higher = tighter follow while dragging
-  const FRICTION = 2.6;           // inertia decay per second
+  let frame = null;
+  let dead = false;
 
   function resize() {
     const r = canvas.parentElement.getBoundingClientRect();
     renderer.setSize(r.width, r.height, false);
     camera.aspect = r.width / r.height;
-    camera.fov = camera.aspect >= 1.4 ? 52 : camera.aspect >= 1 ? 62 : 80;
+    camera.fov = camera.aspect >= 1.4 ? 60 : camera.aspect >= 1 ? 68 : 76;
     camera.updateProjectionMatrix();
   }
-  const clampP = (p) => Math.max(-0.5, Math.min(0.5, p));
 
   function pick(x, y) {
     const r = canvas.getBoundingClientRect();
@@ -172,9 +148,8 @@ export function createHeroScene(canvas, projects = [], hooks = {}) {
 
   function onDown(e) {
     if (e.button !== undefined && e.button !== 0) return;
-    st.dragging = true; st.dist = 0;
+    st.dragging = true; st.dist = 0; st.v = 0; st.idle = 0;
     st.lastX = e.clientX; st.lastY = e.clientY; st.lastT = performance.now();
-    st.vYaw = 0; st.vPitch = 0; st.idle = 0;
     canvas.setPointerCapture?.(e.pointerId);
     canvas.style.cursor = 'grabbing';
     if (st.hovered) { st.hovered = null; onHover(null); }
@@ -187,68 +162,74 @@ export function createHeroScene(canvas, projects = [], hooks = {}) {
     const dtMs = Math.max(1, now - st.lastT);
     st.lastX = e.clientX; st.lastY = e.clientY; st.lastT = now;
     st.dist += Math.abs(dx) + Math.abs(dy);
-    st.tYaw -= dx * SENS;
-    st.tPitch = clampP(st.tPitch - dy * SENS * 0.7);
-    // Smoothed release velocity (rad/s), so a flick carries momentum.
-    const iv = 1000 / dtMs;
-    st.vYaw += ((-dx * SENS * iv) - st.vYaw) * 0.35;
-    st.vPitch += ((-dy * SENS * 0.7 * iv) - st.vPitch) * 0.35;
+    // Either axis turns the screw: drag left or drag up both advance.
+    const d = dx / PX_PER_UNIT_X + dy / PX_PER_UNIT_Y;
+    st.tS -= d;
+    st.v += ((-d * (1000 / dtMs)) - st.v) * 0.35;
   }
   function onUp(e) {
     if (!st.dragging) return;
     st.dragging = false; st.idle = 0;
     canvas.releasePointerCapture?.(e.pointerId);
     canvas.style.cursor = 'grab';
-    if (performance.now() - st.lastT > 80) { st.vYaw = 0; st.vPitch = 0; }
+    if (performance.now() - st.lastT > 80) st.v = 0;
     if (st.dist < 6) {
       const m = pick(e.clientX, e.clientY);
       if (m && m.userData.project) onSelect(m.userData.project.slug);
     }
   }
+  function onWheel(e) {
+    e.preventDefault();
+    st.idle = 0; st.v = 0;
+    st.tS += (e.deltaY + e.deltaX) / 260;
+  }
 
   const clock = new THREE.Clock();
   canvas.style.cursor = 'grab';
   canvas.style.touchAction = 'none';
+  const wrap = (x) => x - Math.round(x / COUNT) * COUNT;
 
   function tick() {
     if (dead) return;
     const dt = Math.min(clock.getDelta(), 0.05);
     if (!st.dragging) {
-      const decay = Math.exp(-FRICTION * dt);
-      st.tYaw += st.vYaw * dt;
-      st.tPitch = clampP(st.tPitch + st.vPitch * dt);
-      st.vYaw *= decay; st.vPitch *= decay;
-      if (Math.abs(st.vYaw) < 1e-4) st.vYaw = 0;
-      if (Math.abs(st.vPitch) < 1e-4) st.vPitch = 0;
+      st.tS += st.v * dt;
+      st.v *= Math.exp(-FRICTION * dt);
+      if (Math.abs(st.v) < 1e-3) {
+        st.v = 0;
+        // Ease onto the nearest panel once momentum has died.
+        const snap = Math.round(st.tS);
+        st.tS += (snap - st.tS) * Math.min(1, dt * 3);
+      }
       st.idle += dt;
-      if (st.idle > 3) st.tYaw -= 0.02 * dt;
+      if (st.idle > 4) st.tS += 0.04 * dt; // slow idle twirl
     }
-    const k = 1 - Math.exp(-dt * (st.dragging ? FOLLOW : 6));
-    st.yaw += (st.tYaw - st.yaw) * k;
-    st.pitch += (st.tPitch - st.pitch) * k;
-    camera.rotation.set(st.pitch, st.yaw, 0);
+    st.s += (st.tS - st.s) * (1 - Math.exp(-dt * (st.dragging ? FOLLOW : SETTLE)));
 
-    // Focus: closest panel to the view direction within a cone.
-    camera.getWorldDirection(fwd);
-    let best = null; let bestDot = Math.cos(0.3);
+    // Place panels on the helix relative to the scroll position.
+    let best = null; let bestD = 0.5;
     for (const m of meshes) {
-      const d = m.userData.dir.dot(fwd);
-      if (d > bestDot) { bestDot = d; best = m; }
+      const idx = wrap(m.userData.i - st.s);
+      m.userData.idx = idx;
+      m.rotation.y = -idx * DA;
+      m.position.y = -idx * DY;
+      const d = Math.abs(idx);
+      if (d < bestD) { bestD = d; best = m; }
     }
+
     let y = null;
     if (best) {
-      proj.copy(best.userData.dir).multiplyScalar(R).project(camera);
+      proj.set(0, best.position.y, -R).project(camera);
       y = Math.round(((1 - proj.y) / 2) * 1000) / 1000;
     }
     if (best !== st.focused) {
-      st.focused = best;
-      st.lastY = y;
+      st.focused = best; st.lastLabelY = y;
       onFocus(best ? best.userData.project : null, best ? best.userData.tint : null, y);
-    } else if (best && y !== st.lastY) {
-      st.lastY = y;
+    } else if (best && y !== st.lastLabelY) {
+      st.lastLabelY = y;
       onFocus(best.userData.project, best.userData.tint, y, true);
     }
-    // Hover raycast at most once per frame, only when the pointer moved.
+
     if (st.pointerMoved && !st.dragging) {
       st.pointerMoved = false;
       const m = pick(st.px, st.py);
@@ -263,7 +244,6 @@ export function createHeroScene(canvas, projects = [], hooks = {}) {
       const target = m === best ? 1 : 0;
       const f = m.userData.focus += (target - m.userData.focus) * Math.min(1, dt * 7);
       m.material.uniforms.uFocus.value = f;
-      m.scale.setScalar(1 - f * 0.06);
     }
     renderer.render(scene, camera);
     frame = requestAnimationFrame(tick);
@@ -275,6 +255,7 @@ export function createHeroScene(canvas, projects = [], hooks = {}) {
   window.addEventListener('pointermove', onMove, { passive: true });
   window.addEventListener('pointerup', onUp);
   window.addEventListener('pointercancel', onUp);
+  canvas.addEventListener('wheel', onWheel, { passive: false });
   canvas.addEventListener('dragstart', (e) => e.preventDefault());
   canvas.addEventListener('contextmenu', (e) => e.preventDefault());
   tick();
@@ -288,6 +269,7 @@ export function createHeroScene(canvas, projects = [], hooks = {}) {
       window.removeEventListener('pointermove', onMove);
       window.removeEventListener('pointerup', onUp);
       window.removeEventListener('pointercancel', onUp);
+      canvas.removeEventListener('wheel', onWheel);
       disposables.forEach((d) => d.dispose());
       renderer.dispose();
     },
