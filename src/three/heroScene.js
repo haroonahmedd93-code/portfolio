@@ -83,17 +83,18 @@ export function createHeroScene(canvas, projects = [], hooks = {}) {
   const camera = new THREE.PerspectiveCamera(50, 1, 0.1, 100);
 
   // Helix layout ---------------------------------------------------------
-  // Camera sits behind the cylinder axis so the whole front half is in frame;
-  // panels on the far wall face the camera (concave), side panels go edge-on.
+  // Viewer sits on the cylinder axis, inside the drum. Panels wrap right to the
+  // screen edges and the next turn of the helix shows as a dim rim above/below.
+  // The focused panel is pulled toward the viewer and enlarged.
   const R = 6;                       // cylinder radius
-  const CAM_D = 11.4;                // camera distance behind the axis
-  camera.position.set(0, 0, CAM_D);
-  const PER_TURN = 6;                // panels per full revolution
+  camera.position.set(0, 0, 0);
+  const PER_TURN = 13.5;              // panels per full revolution
   const DA = (Math.PI * 2) / PER_TURN;
-  const DY = 3.3;                    // vertical rise per panel
-  const COUNT = Math.max(24, projects.length * 8);
-  const PANEL_H = 6.6;
-  const PANEL_ARC = 0.95;            // radians of cylinder the panel covers
+  const DY = 0.23;                   // vertical rise per panel
+  const COUNT = 54; // 4 full turns of 13.5 so the wrap is seamless
+  const PANEL_H = 1.7;
+  const PANEL_ARC = 0.36;            // radians of cylinder the panel covers
+  const PULL = 1.9;                  // how far the focused panel comes toward the viewer
 
   const meshes = [];
   const disposables = [];
@@ -101,8 +102,8 @@ export function createHeroScene(canvas, projects = [], hooks = {}) {
     const project = projects.length ? projects[i % projects.length] : null;
     const [ca, cb] = PALETTES[i % PALETTES.length];
     const { t: tex, thumb } = makeTexture(ca, cb, i + 1);
-    const arc = PANEL_ARC * (0.78 + ((i * 31) % 10) / 33);
-    const h = PANEL_H * (0.82 + ((i * 17) % 10) / 28);
+    const arc = PANEL_ARC * (0.8 + ((i * 31) % 10) / 40);
+    const h = PANEL_H * (0.8 + ((i * 17) % 10) / 32);
     // Open cylinder segment centred on theta = PI, i.e. facing the camera at -Z.
     const geo = new THREE.CylinderGeometry(R, R, h, 24, 1, true, Math.PI - arc / 2, arc);
     const mat = new THREE.ShaderMaterial({
@@ -125,8 +126,8 @@ export function createHeroScene(canvas, projects = [], hooks = {}) {
     px: 0, py: 0, pointerMoved: false,
     focused: null, hovered: null, idle: 0, exiting: false,
   };
-  const PX_PER_UNIT_X = 320;         // horizontal px for one panel step
-  const PX_PER_UNIT_Y = 260;         // vertical px for one panel step
+  const PX_PER_UNIT_X = 170;         // horizontal px for one panel step
+  const PX_PER_UNIT_Y = 140;         // vertical px for one panel step
   const FOLLOW = 8;                  // trailing follow rate while dragging
   const SETTLE = 5;                  // follow rate when coasting
   const FRICTION = 2.4;              // inertia decay per second
@@ -139,7 +140,7 @@ export function createHeroScene(canvas, projects = [], hooks = {}) {
     const r = canvas.parentElement.getBoundingClientRect();
     renderer.setSize(r.width, r.height, false);
     camera.aspect = r.width / r.height;
-    camera.fov = camera.aspect >= 1.4 ? 50 : camera.aspect >= 1 ? 58 : 72;
+    camera.fov = camera.aspect >= 1.4 ? 66 : camera.aspect >= 1 ? 74 : 84;
     camera.updateProjectionMatrix();
   }
 
@@ -258,8 +259,12 @@ export function createHeroScene(canvas, projects = [], hooks = {}) {
     }
     for (const m of meshes) {
       const target = m === best ? 1 : 0;
-      const f = m.userData.focus += (target - m.userData.focus) * Math.min(1, dt * 7);
+      const f = m.userData.focus += (target - m.userData.focus) * Math.min(1, dt * 6);
       m.material.uniforms.uFocus.value = f;
+      // Pull the focused panel toward the viewer along its own radial direction.
+      const a = m.rotation.y;
+      m.position.x = Math.sin(a) * PULL * f;
+      m.position.z = Math.cos(a) * PULL * f;
     }
     renderer.render(scene, camera);
     frame = requestAnimationFrame(tick);
