@@ -17,14 +17,18 @@
   <header id="site-nav" hidden></header>
 
   <main id="main" class="stage">
+    <div class="stage__bg" id="stage-bg-a"></div>
+    <div class="stage__bg" id="stage-bg-b"></div>
     <div class="stage__canvas" id="hero-canvas-wrap">
       <canvas id="hero-canvas"></canvas>
       <div id="hero-fallback" hidden class="stage__fallback"></div>
     </div>
 
     <div class="stage__labels" id="stage-labels" aria-live="polite">
-      <span class="stage__label stage__label--l" id="focus-title"></span>
-      <span class="stage__label stage__label--r" id="focus-cat"></span>
+      <span class="stage__label" id="focus-title"></span>
+      <span class="stage__label" id="focus-cat"></span>
+      <span class="stage__label" id="focus-year"></span>
+      <span class="stage__label stage__label--r" id="focus-idx"></span>
       <span class="stage__view" id="focus-view">[VIEW PROJECT]</span>
     </div>
 

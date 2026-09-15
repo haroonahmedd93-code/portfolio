@@ -39,7 +39,10 @@ async function bootStage() {
   const titleEl = $('focus-title');
   const catEl = $('focus-cat');
   const viewEl = $('focus-view');
-  const root = document.documentElement;
+  const yearEl = $('focus-year');
+  const idxEl = $('focus-idx');
+  const bgLayers = [$('stage-bg-a'), $('stage-bg-b')];
+  let bgFlip = 0;
 
   initGalleryList({
     projects,
@@ -60,17 +63,20 @@ async function bootStage() {
     let current = null;
     const scene = createHeroScene(canvas, projects, {
       onSelect: (slug) => navigateWithFade(`/projects/project.html?slug=${encodeURIComponent(slug)}`),
-      onFocus: (project, tint, y, positionOnly) => {
-        if (y != null) labels.style.transform = `translate3d(0, ${(y * labels.parentElement.clientHeight).toFixed(1)}px, 0) translateY(-50%)`;
-        if (positionOnly) return;
-        if (project !== current) {
-          current = project;
-          labels.classList.toggle('is-on', !!project);
-          if (project) {
-            titleEl.textContent = project.title;
-            catEl.textContent = (project.tags && project.tags[0]) || project.role || '';
-          }
-          root.style.setProperty('--stage-tint', tint || 'transparent');
+      onFocus: (project, data) => {
+        if (project === current) return;
+        current = project;
+        labels.classList.toggle('is-on', !!project);
+        if (project) {
+          titleEl.textContent = project.title;
+          catEl.textContent = (project.tags && project.tags[0]) || project.role || '';
+          yearEl.textContent = project.year || '';
+          idxEl.textContent = String(projects.indexOf(project) + 1).padStart(2, '0');
+          // Blurred backdrop: crossfade two layers so background-image never snaps.
+          bgFlip = 1 - bgFlip;
+          bgLayers[bgFlip].style.backgroundImage = `url(${data.thumb})`;
+          bgLayers[bgFlip].style.opacity = '0.85';
+          bgLayers[1 - bgFlip].style.opacity = '0';
         }
       },
       onHover: (project) => viewEl.classList.toggle('is-on', !!project),

@@ -44,7 +44,10 @@ function makeTexture(colorA, colorB, seed) {
   ctx.fillRect(0, size * (0.55 + rnd() * 0.3), size, size * 0.12);
   const t = new THREE.CanvasTexture(canvas);
   t.colorSpace = THREE.SRGBColorSpace;
-  return t;
+  const thumb = document.createElement('canvas');
+  thumb.width = thumb.height = 24;
+  thumb.getContext('2d').drawImage(canvas, 0, 0, 24, 24);
+  return { t, thumb: thumb.toDataURL('image/png') };
 }
 
 const vert = /* glsl */ `
@@ -77,26 +80,29 @@ export function createHeroScene(canvas, projects = [], hooks = {}) {
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true, powerPreference: 'high-performance' });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
   const scene = new THREE.Scene();
-  const camera = new THREE.PerspectiveCamera(60, 1, 0.05, 50);
-  camera.position.set(0, 0, 0);
+  const camera = new THREE.PerspectiveCamera(50, 1, 0.1, 100);
 
   // Helix layout ---------------------------------------------------------
+  // Camera sits behind the cylinder axis so the whole front half is in frame;
+  // panels on the far wall face the camera (concave), side panels go edge-on.
   const R = 6;                       // cylinder radius
-  const PER_TURN = 18;               // panels per full revolution
+  const CAM_D = 11.4;                // camera distance behind the axis
+  camera.position.set(0, 0, CAM_D);
+  const PER_TURN = 6;                // panels per full revolution
   const DA = (Math.PI * 2) / PER_TURN;
-  const DY = 0.115;                  // vertical rise per panel
-  const COUNT = Math.max(72, projects.length * 24);
-  const PANEL_H = 1.4;
-  const PANEL_ARC = 0.31;            // radians of cylinder the panel covers
+  const DY = 3.3;                    // vertical rise per panel
+  const COUNT = Math.max(24, projects.length * 8);
+  const PANEL_H = 6.6;
+  const PANEL_ARC = 0.95;            // radians of cylinder the panel covers
 
   const meshes = [];
   const disposables = [];
   for (let i = 0; i < COUNT; i++) {
     const project = projects.length ? projects[i % projects.length] : null;
     const [ca, cb] = PALETTES[i % PALETTES.length];
-    const tex = makeTexture(ca, cb, i + 1);
-    const arc = PANEL_ARC * (0.9 + ((i * 31) % 10) / 50);
-    const h = PANEL_H * (0.9 + ((i * 17) % 10) / 50);
+    const { t: tex, thumb } = makeTexture(ca, cb, i + 1);
+    const arc = PANEL_ARC * (0.78 + ((i * 31) % 10) / 33);
+    const h = PANEL_H * (0.82 + ((i * 17) % 10) / 28);
     // Open cylinder segment centred on theta = PI, i.e. facing the camera at -Z.
     const geo = new THREE.CylinderGeometry(R, R, h, 24, 1, true, Math.PI - arc / 2, arc);
     const mat = new THREE.ShaderMaterial({
@@ -106,7 +112,7 @@ export function createHeroScene(canvas, projects = [], hooks = {}) {
       side: THREE.BackSide,
     });
     const mesh = new THREE.Mesh(geo, mat);
-    mesh.userData = { project, tint: avgColor(ca, cb), focus: 0, i, idx: 0 };
+    mesh.userData = { project, tint: avgColor(ca, cb), thumb, focus: 0, i, idx: 0 };
     scene.add(mesh);
     meshes.push(mesh);
     disposables.push(geo, mat, tex);
@@ -119,14 +125,13 @@ export function createHeroScene(canvas, projects = [], hooks = {}) {
     px: 0, py: 0, pointerMoved: false,
     focused: null, hovered: null, idle: 0, lastLabelY: -1,
   };
-  const PX_PER_UNIT_X = 120;         // horizontal px for one panel step
-  const PX_PER_UNIT_Y = 95;          // vertical px for one panel step
+  const PX_PER_UNIT_X = 320;         // horizontal px for one panel step
+  const PX_PER_UNIT_Y = 260;         // vertical px for one panel step
   const FOLLOW = 8;                  // trailing follow rate while dragging
   const SETTLE = 5;                  // follow rate when coasting
   const FRICTION = 2.4;              // inertia decay per second
   const raycaster = new THREE.Raycaster();
   const ndc = new THREE.Vector2();
-  const proj = new THREE.Vector3();
   let frame = null;
   let dead = false;
 
@@ -134,7 +139,7 @@ export function createHeroScene(canvas, projects = [], hooks = {}) {
     const r = canvas.parentElement.getBoundingClientRect();
     renderer.setSize(r.width, r.height, false);
     camera.aspect = r.width / r.height;
-    camera.fov = camera.aspect >= 1.4 ? 60 : camera.aspect >= 1 ? 68 : 76;
+    camera.fov = camera.aspect >= 1.4 ? 50 : camera.aspect >= 1 ? 58 : 72;
     camera.updateProjectionMatrix();
   }
 
@@ -181,7 +186,7 @@ export function createHeroScene(canvas, projects = [], hooks = {}) {
   function onWheel(e) {
     e.preventDefault();
     st.idle = 0; st.v = 0;
-    st.tS += (e.deltaY + e.deltaX) / 260;
+    st.tS += (e.deltaY + e.deltaX) / 700;
   }
 
   const clock = new THREE.Clock();
@@ -217,17 +222,9 @@ export function createHeroScene(canvas, projects = [], hooks = {}) {
       if (d < bestD) { bestD = d; best = m; }
     }
 
-    let y = null;
-    if (best) {
-      proj.set(0, best.position.y, -R).project(camera);
-      y = Math.round(((1 - proj.y) / 2) * 1000) / 1000;
-    }
     if (best !== st.focused) {
-      st.focused = best; st.lastLabelY = y;
-      onFocus(best ? best.userData.project : null, best ? best.userData.tint : null, y);
-    } else if (best && y !== st.lastLabelY) {
-      st.lastLabelY = y;
-      onFocus(best.userData.project, best.userData.tint, y, true);
+      st.focused = best;
+      onFocus(best ? best.userData.project : null, best ? best.userData : null);
     }
 
     if (st.pointerMoved && !st.dragging) {

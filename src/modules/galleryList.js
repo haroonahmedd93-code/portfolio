@@ -15,6 +15,7 @@ export function initGalleryList({ projects, canvasWrap, listEl, sphereBtn, listB
           <span class="gallery-list__title">${p.title}</span>
           <span class="gallery-list__cat">${cat(p)}</span>
         </span>
+        <span class="gallery-list__stack">${(p.tools || p.tags || []).join(' · ')}</span>
         <span class="gallery-list__year">${p.year || ''}</span>
       </a>`
     )
@@ -37,7 +38,6 @@ export function initGalleryList({ projects, canvasWrap, listEl, sphereBtn, listB
     listEl.hidden = false;
     canvasWrap.hidden = true;
     if (labelsEl) labelsEl.hidden = true;
-    document.documentElement.style.setProperty('--stage-tint', 'transparent');
     mark(listBtn, true); mark(sphereBtn, false);
   }
   function showSphere() {
