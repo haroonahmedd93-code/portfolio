@@ -7,17 +7,32 @@
   <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,500;12..96,600;12..96,700;12..96,800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Geist+Mono:wght@300;400&display=swap" rel="stylesheet" />
 </head>
-<body data-page="project">
+<body data-page="project" class="case">
   <a class="skip-link" href="#main">Skip to content</a>
-  <header id="site-nav"></header>
+  <header id="site-nav" hidden></header>
 
-  <main id="main">
-    <section class="wrap" id="project-detail" aria-live="polite"></section>
+  <header class="case__bar">
+    <span id="case-title"></span>
+    <span id="case-cat"></span>
+    <a href="/" id="case-close">[Close]</a>
+  </header>
+
+  <main id="main" class="case__main">
+    <article id="project-detail" aria-live="polite"></article>
   </main>
 
-  <footer id="site-footer"></footer>
+  <nav class="stage__corner stage__corner--bl case__nav" aria-label="Primary">
+    <a href="/projects/"><i>[·]</i> Work</a>
+    <a href="/about/"><i>[ ]</i> About</a>
+    <a href="/contact/"><i>[ ]</i> Contact</a>
+  </nav>
+  <div class="stage__corner stage__corner--br case__nav">
+    <a href="/resume.pdf">[Resume]</a>
+    <a id="case-email" href="mailto:[YOUR_EMAIL]">[Email]</a>
+  </div>
+
   <script type="module" src="/src/pages/project.js"></script>
 </body>
 </html>

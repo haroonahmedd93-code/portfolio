@@ -1,90 +1,70 @@
 import { getContent } from './content.js';
-import { initRevealAnimations } from './revealAnimations.js';
 import { gradientClass } from './gradient.js';
+import { navigateWithFade } from './pageTransition.js';
 
-function galleryMarkup(images, slug) {
-  const count = images && images.length ? images.length : 2;
-  return Array.from({ length: count })
-    .map(
-      (_, i) =>
-        `<div class="detail-gallery__frame ${gradientClass(`${slug || 'project'}-${i}`, i)}" data-reveal aria-hidden="true"></div>`
-    )
-    .join('');
+const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const paras = (t) => esc(t).split(/\n\s*\n/).filter(Boolean).map((p) => `<p>${p.replace(/\n/g, '<br />')}</p>`).join('');
+const cat = (p) => (p.tags && p.tags[0]) || p.role || '';
+const placeholder = (src) => !src || /placeholder|^#?$/.test(src);
+
+function field(label, html) {
+  return html ? `<div class="case__field"><span class="case__label">${label}</span><div class="case__value">${html}</div></div>` : '';
 }
 
-function paginationLink(project, label) {
-  if (!project) return '<span></span>';
-  return `<a href="/projects/project.html?slug=${encodeURIComponent(project.slug)}">
-    <span class="section-eyebrow">${label}</span><br />${project.title}
-  </a>`;
+function mediaMarkup(project) {
+  const imgs = project.gallery && project.gallery.length ? project.gallery : [null, null];
+  return imgs
+    .map((src, i) =>
+      placeholder(src)
+        ? `<div class="case__media ${gradientClass(`${project.slug}-${i}`, i)}" aria-hidden="true"></div>`
+        : `<img class="case__media" src="${esc(src)}" alt="${esc(project.title)} — ${i + 1}" loading="lazy" />`
+    )
+    .join('');
 }
 
 export async function initProjectDetail() {
   const root = document.getElementById('project-detail');
   if (!root) return;
-
-  const params = new URLSearchParams(window.location.search);
-  const slug = params.get('slug');
-  const { projects } = await getContent();
+  const slug = new URLSearchParams(window.location.search).get('slug');
+  const { projects, site } = await getContent();
   const index = projects.findIndex((p) => p.slug === slug);
   const project = index >= 0 ? projects[index] : projects[0];
+  if (!project) { root.innerHTML = '<p>Project not found.</p>'; return; }
 
-  if (!project) {
-    root.innerHTML = '<p>Project not found.</p>';
-    return;
-  }
+  document.title = `${project.title} — ${site.name || ''}`;
+  document.getElementById('case-title').textContent = project.title;
+  document.getElementById('case-cat').textContent = cat(project);
+  const email = document.getElementById('case-email');
+  if (email && site.email) email.href = `mailto:${site.email}`;
+  document.getElementById('case-close').addEventListener('click', (e) => { e.preventDefault(); navigateWithFade('/'); });
 
-  document.title = `${project.title} — Project`;
-
-  const prev = projects[index - 1] || null;
-  const next = projects[index + 1] || projects[0] || null;
+  const next = projects[(index + 1) % projects.length];
+  const links = (project.links || []).filter((l) => l.url && l.url !== '#');
 
   root.innerHTML = `
-    <header class="detail-header" data-reveal>
-      <p class="section-eyebrow">${(project.tags || []).join(' · ')}</p>
-      <h1>${project.title}</h1>
-      <p class="hero__statement" style="max-width:42rem;">${project.summary}</p>
-      <div class="detail-meta">
-        <span><strong>Role</strong><br />${project.role}</span>
-        <span><strong>Year</strong><br />${project.year}</span>
-        <span><strong>Tools</strong><br />${(project.tools || []).join(', ')}</span>
-      </div>
-    </header>
+    <section class="case__meta">
+      ${field('Overview', paras(project.summary))}
+      ${links.length ? `<div class="case__field case__links">${links.map((l) => `<a href="${esc(l.url)}" target="_blank" rel="noopener">[${esc(l.label)}]</a>`).join('')}</div>` : ''}
+      ${field('Role', esc(project.role))}
+      ${field('Year', esc(project.year))}
+      ${field('Tools', esc((project.tools || []).join(', ')))}
+      ${field('Tags', esc((project.tags || []).join(', ')))}
+    </section>
 
-    <div class="detail-gallery">${galleryMarkup(project.gallery, project.slug)}</div>
+    <section class="case__gallery">${mediaMarkup(project)}</section>
 
-    <div class="detail-body">
-      <section data-reveal>
-        <h2>Challenge</h2>
-        <p>${project.challenge || ''}</p>
-      </section>
-      <section data-reveal>
-        <h2>Solution</h2>
-        <p>${project.solution || ''}</p>
-      </section>
-      ${
-        project.outcomes && project.outcomes.length
-          ? `<section data-reveal>
-              <h2>Outcomes</h2>
-              <ul class="outcome-list">${project.outcomes.map((o) => `<li>${o}</li>`).join('')}</ul>
-            </section>`
-          : ''
-      }
-      ${
-        project.links && project.links.length
-          ? `<section data-reveal>
-              <h2>Links</h2>
-              <p>${project.links.map((l) => `<a class="btn" href="${l.url}">${l.label}</a>`).join(' ')}</p>
-            </section>`
-          : ''
-      }
-    </div>
+    <section class="case__study">
+      ${field('Challenge', paras(project.challenge))}
+      ${field('Solution', paras(project.solution))}
+      ${project.outcomes && project.outcomes.length ? field('Outcomes', `<ul class="case__list">${project.outcomes.map((o) => `<li>${esc(o)}</li>`).join('')}</ul>`) : ''}
+      ${project.body ? field('Process', paras(project.body)) : ''}
+    </section>
 
-    <nav class="detail-pagination" aria-label="Project pagination">
-      ${paginationLink(prev, 'Previous')}
-      ${paginationLink(next, 'Next')}
-    </nav>
+    ${next && next !== project ? `<a class="case__next" href="/projects/project.html?slug=${encodeURIComponent(next.slug)}" data-next>
+      <span class="case__label">Next project</span>
+      <span class="case__next-title">${esc(next.title)}</span>
+      <span class="case__label">${esc(cat(next))} · ${esc(next.year || '')}</span>
+    </a>` : ''}
   `;
-
-  initRevealAnimations(root);
+  root.querySelector('[data-next]')?.addEventListener('click', (e) => { e.preventDefault(); navigateWithFade(e.currentTarget.href); });
 }
