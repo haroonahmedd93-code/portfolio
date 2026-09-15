@@ -284,7 +284,11 @@ export function createHeroScene(canvas, projects = [], hooks = {}) {
     exit(done) {
       st.dragging = false; st.v = 0; st.tS = st.s; st.exiting = true;
       canvas.style.cursor = 'default';
-      runAnim(0, -5, 0.75, (x) => x * x * x, done);
+      let fired = false;
+      const once = () => { if (!fired) { fired = true; done(); } };
+      runAnim(0, -5, 0.75, (x) => x * x * x, once);
+      // Safety net: if rAF is throttled (background tab), still navigate.
+      setTimeout(once, 1100);
     },
     dispose() {
       dead = true;
