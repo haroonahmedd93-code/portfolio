@@ -1,10 +1,10 @@
 import * as THREE from 'three';
 
-// Cylinder "twirl" gallery. The camera sits on the axis of a cylinder; project
+// Cylinder "twirl" gallery. The viewer sits on the axis of a cylinder; project
 // panels are curved cylinder segments laid out on a helix. One scroll value `s`
-// (in panel units) drives a screw motion: panels rotate around the axis and rise
-// at the same time, so each one in turn arrives front-and-centre. Drag (either
-// axis), wheel and touch all feed `s` through a trailing lerp + inertia.
+// (in panel units, fed from Lenis in home.js) drives a screw motion: panels rotate
+// around the axis and rise at the same time, so each one in turn arrives
+// front-and-centre. The elasticity comes from Lenis' lerp on the scroll value.
 
 const PALETTES = [
   ['#8a8fff', '#f2b880'],
@@ -119,18 +119,10 @@ export function createHeroScene(canvas, projects = [], hooks = {}) {
     disposables.push(geo, mat, tex);
   }
 
-  // Interaction state ----------------------------------------------------
-  const st = {
-    s: 0, tS: 0, v: 0,               // scroll (panel units), target, velocity (units/s)
-    dragging: false, lastX: 0, lastY: 0, lastT: 0, dist: 0,
-    px: 0, py: 0, pointerMoved: false,
-    focused: null, hovered: null, idle: 0, exiting: false,
-  };
-  const PX_PER_UNIT_X = 170;         // horizontal px for one panel step
-  const PX_PER_UNIT_Y = 140;         // vertical px for one panel step
-  const FOLLOW = 8;                  // trailing follow rate while dragging
-  const SETTLE = 5;                  // follow rate when coasting
-  const FRICTION = 2.4;              // inertia decay per second
+  // State ------------------------------------------------------------------
+  // The helix position is driven from outside (Lenis scroll, in panel units);
+  // this module only renders, picks, and runs the intro / exit screw.
+  const st = { s: 0, px: 0, py: 0, pointerMoved: false, focused: null, hovered: null, exiting: false };
   const raycaster = new THREE.Raycaster();
   const ndc = new THREE.Vector2();
   let frame = null;
@@ -151,81 +143,27 @@ export function createHeroScene(canvas, projects = [], hooks = {}) {
     const hit = raycaster.intersectObjects(meshes, false)[0];
     return hit ? hit.object : null;
   }
-
-  function onDown(e) {
-    if (e.button !== undefined && e.button !== 0) return;
-    st.dragging = true; st.dist = 0; st.v = 0; st.idle = 0;
-    st.lastX = e.clientX; st.lastY = e.clientY; st.lastT = performance.now();
-    canvas.setPointerCapture?.(e.pointerId);
-    canvas.style.cursor = 'grabbing';
-    if (st.hovered) { st.hovered = null; onHover(null); }
-  }
-  function onMove(e) {
-    st.px = e.clientX; st.py = e.clientY; st.pointerMoved = true;
-    if (!st.dragging) return;
-    const now = performance.now();
-    const dx = e.clientX - st.lastX; const dy = e.clientY - st.lastY;
-    const dtMs = Math.max(1, now - st.lastT);
-    st.lastX = e.clientX; st.lastY = e.clientY; st.lastT = now;
-    st.dist += Math.abs(dx) + Math.abs(dy);
-    // Either axis turns the screw: drag left or drag up both advance.
-    const d = dx / PX_PER_UNIT_X + dy / PX_PER_UNIT_Y;
-    st.tS -= d;
-    st.v += ((-d * (1000 / dtMs)) - st.v) * 0.35;
-  }
-  function onUp(e) {
-    if (!st.dragging) return;
-    st.dragging = false; st.idle = 0;
-    canvas.releasePointerCapture?.(e.pointerId);
-    canvas.style.cursor = 'grab';
-    if (performance.now() - st.lastT > 80) st.v = 0;
-    if (st.dist < 6) {
-      const m = pick(e.clientX, e.clientY);
-      if (m && m.userData.project) onSelect(m.userData.project.slug);
-    }
-  }
-  function onWheel(e) {
-    e.preventDefault();
-    st.idle = 0; st.v = 0;
-    st.tS += (e.deltaY + e.deltaX) / 700;
-  }
+  function onMove(e) { st.px = e.clientX; st.py = e.clientY; st.pointerMoved = true; }
 
   // Intro / exit: a global offset added to the scroll so the whole helix screws
   // in on load and screws away on selection (matches the reference transition).
   const anim = { off: 4, from: 4, to: 0, t: 0, dur: 1.4, ease: (x) => 1 - Math.pow(1 - x, 3), done: null };
-  let fade = 0; // 0..1 canvas visibility
   function runAnim(from, to, dur, ease, done) {
     anim.from = from; anim.to = to; anim.t = 0; anim.dur = dur; anim.ease = ease; anim.done = done;
   }
 
   const clock = new THREE.Clock();
-  canvas.style.cursor = 'grab';
-  canvas.style.touchAction = 'none';
   const wrap = (x) => x - Math.round(x / COUNT) * COUNT;
 
   function tick() {
     if (dead) return;
     const dt = Math.min(clock.getDelta(), 0.05);
-    if (!st.dragging) {
-      st.tS += st.v * dt;
-      st.v *= Math.exp(-FRICTION * dt);
-      if (Math.abs(st.v) < 1e-3) {
-        st.v = 0;
-        // Ease onto the nearest panel once momentum has died.
-        const snap = Math.round(st.tS);
-        st.tS += (snap - st.tS) * Math.min(1, dt * 3);
-      }
-      st.idle += dt;
-      if (st.idle > 4) st.tS += 0.04 * dt; // slow idle twirl
-    }
-    st.s += (st.tS - st.s) * (1 - Math.exp(-dt * (st.dragging ? FOLLOW : SETTLE)));
 
-    // Intro/exit offset.
     if (anim.t < anim.dur) {
       anim.t = Math.min(anim.dur, anim.t + dt);
       const k = anim.ease(anim.t / anim.dur);
       anim.off = anim.from + (anim.to - anim.from) * k;
-      fade = anim.to === 0 ? k : 1 - k;
+      const fade = anim.to === 0 ? k : 1 - k;
       canvas.style.opacity = String(Math.min(1, fade * 1.6));
       if (anim.t >= anim.dur && anim.done) { const d = anim.done; anim.done = null; d(); }
     }
@@ -246,14 +184,12 @@ export function createHeroScene(canvas, projects = [], hooks = {}) {
       st.focused = best;
       onFocus(best ? best.userData.project : null, best ? best.userData : null);
     }
-
-    if (st.pointerMoved && !st.dragging && !st.exiting) {
+    if (st.pointerMoved && !st.exiting) {
       st.pointerMoved = false;
       const m = pick(st.px, st.py);
       const h = m && m === best ? m : null;
       if (h !== st.hovered) {
         st.hovered = h;
-        canvas.style.cursor = h ? 'pointer' : 'grab';
         onHover(h ? h.userData.project : null);
       }
     }
@@ -272,23 +208,20 @@ export function createHeroScene(canvas, projects = [], hooks = {}) {
 
   resize();
   window.addEventListener('resize', resize);
-  canvas.addEventListener('pointerdown', onDown);
   window.addEventListener('pointermove', onMove, { passive: true });
-  window.addEventListener('pointerup', onUp);
-  window.addEventListener('pointercancel', onUp);
-  canvas.addEventListener('wheel', onWheel, { passive: false });
   canvas.addEventListener('dragstart', (e) => e.preventDefault());
   canvas.addEventListener('contextmenu', (e) => e.preventDefault());
+  canvas.style.opacity = '0';
   tick();
 
-  canvas.style.opacity = '0';
-  canvas.style.transition = 'none';
-
   return {
+    /** Drive the helix: s is the scroll position in panel units. */
+    setScroll(s) { st.s = s; },
+    /** Which project (if any) is under the pointer AND focused — click target. */
+    hitFocused(x, y) { const m = pick(x, y); return m && m === st.focused ? m.userData.project : null; },
     /** Screw the helix away and fade out, then call done(). */
     exit(done) {
-      st.dragging = false; st.v = 0; st.tS = st.s; st.exiting = true;
-      canvas.style.cursor = 'default';
+      st.exiting = true;
       let fired = false;
       const once = () => { if (!fired) { fired = true; done(); } };
       runAnim(0, -5, 0.75, (x) => x * x * x, once);
@@ -299,11 +232,7 @@ export function createHeroScene(canvas, projects = [], hooks = {}) {
       dead = true;
       if (frame) cancelAnimationFrame(frame);
       window.removeEventListener('resize', resize);
-      canvas.removeEventListener('pointerdown', onDown);
       window.removeEventListener('pointermove', onMove);
-      window.removeEventListener('pointerup', onUp);
-      window.removeEventListener('pointercancel', onUp);
-      canvas.removeEventListener('wheel', onWheel);
       disposables.forEach((d) => d.dispose());
       renderer.dispose();
     },
