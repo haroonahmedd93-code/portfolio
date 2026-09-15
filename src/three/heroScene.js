@@ -152,6 +152,8 @@ export function createHeroScene(canvas, projects = [], hooks = {}) {
     const r = canvas.parentElement.getBoundingClientRect();
     renderer.setSize(r.width, r.height, false);
     camera.aspect = r.width / r.height;
+    // Widen the view on narrow/portrait viewports so panels keep a similar on-screen size.
+    camera.fov = camera.aspect >= 1.4 ? 52 : camera.aspect >= 1 ? 62 : 80;
     camera.updateProjectionMatrix();
   }
   const clampP = (p) => Math.max(-0.75, Math.min(0.75, p));
