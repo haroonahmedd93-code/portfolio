@@ -1,80 +1,85 @@
 import '../main.js';
-import { renderSelectedProjects } from '../modules/selectedProjects.js';
 import { getContent } from '../modules/content.js';
-import { initHeroIntro } from '../modules/revealAnimations.js';
-import { shouldRunHeroScene, prefersReducedMotion } from '../three/capability.js';
+import { shouldRunHeroScene } from '../three/capability.js';
 import { initGalleryList } from '../modules/galleryList.js';
 import { navigateWithFade } from '../modules/pageTransition.js';
 
-async function renderHeroText() {
-  const { site } = await getContent();
-  const nameEl = document.getElementById('hero-name');
-  const roleEl = document.getElementById('hero-role');
-  const statementEl = document.getElementById('hero-statement');
-  const emailLink = document.getElementById('hero-email-link');
-  if (nameEl) nameEl.textContent = site.name || '[YOUR_NAME]';
-  if (roleEl) roleEl.textContent = site.role || '[YOUR_ROLE]';
-  if (statementEl) statementEl.textContent = site.statement || '';
-  if (emailLink) emailLink.href = `mailto:${site.email || '[YOUR_EMAIL]'}`;
+const $ = (id) => document.getElementById(id);
 
-  const servicesEl = document.getElementById('services-grid');
-  if (servicesEl && site.services) {
-    servicesEl.innerHTML = site.services
-      .map(
-        (s) => `
-        <div class="service-card" data-reveal data-reveal-group>
-          <h3>${s.title}</h3>
-          <p>${s.description}</p>
-        </div>
-      `
-      )
-      .join('');
-  }
-  document.title = `${site.name || '[YOUR_NAME]'} — ${site.role || '[YOUR_ROLE]'}`;
+async function renderChrome() {
+  const { site } = await getContent();
+  const name = site.name || '[YOUR_NAME]';
+  const parts = name.split(' ');
+  $('hero-name').innerHTML = `${parts[0]}<br />${parts.slice(1).join(' ')}`;
+  $('hero-role').textContent = site.role || '[YOUR_ROLE]';
+  $('hero-email-link').href = `mailto:${site.email || '[YOUR_EMAIL]'}`;
+  document.title = `${name} — ${site.role || '[YOUR_ROLE]'}`;
+
+  const clock = $('stage-clock');
+  const phase = $('stage-phase');
+  const fmt = new Intl.DateTimeFormat('en-US', { hour: 'numeric', minute: '2-digit', hour12: true, timeZone: 'Asia/Dubai' });
+  const hourFmt = new Intl.DateTimeFormat('en-US', { hour: 'numeric', hour12: false, timeZone: 'Asia/Dubai' });
+  const update = () => {
+    const now = new Date();
+    clock.textContent = `DXB, ${fmt.format(now)}`;
+    const h = Number(hourFmt.format(now)) % 24;
+    phase.textContent = h < 6 ? 'Late night' : h < 10 ? 'Starting the day' : h < 14 ? 'Deep in work' : h < 19 ? 'Afternoon session' : 'Winding down';
+  };
+  update();
+  setInterval(update, 30000);
 }
 
-async function bootHero() {
-  await renderHeroText();
-  initHeroIntro();
+async function bootStage() {
+  await renderChrome();
+  const canvas = $('hero-canvas');
+  const fallback = $('hero-fallback');
+  const { projects } = await getContent();
 
-  const canvas = document.getElementById('hero-canvas');
-  const fallback = document.getElementById('hero-fallback');
-  if (!canvas) return;
+  const labels = $('stage-labels');
+  const titleEl = $('focus-title');
+  const catEl = $('focus-cat');
+  const viewEl = $('focus-view');
+  const root = document.documentElement;
+
+  initGalleryList({
+    projects,
+    canvasWrap: $('hero-canvas-wrap'),
+    listEl: $('gallery-list'),
+    sphereBtn: $('gallery-sphere-btn'),
+    listBtn: $('gallery-list-btn'),
+    labelsEl: labels,
+  });
 
   if (!shouldRunHeroScene()) {
-    if (fallback) fallback.hidden = false;
+    fallback.hidden = false;
     return;
   }
 
   try {
-    const [{ createHeroScene }, { projects }] = await Promise.all([
-      import('../three/heroScene.js'),
-      getContent(),
-    ]);
-    const scene = createHeroScene(canvas, projects, (slug) =>
-      navigateWithFade(`/projects/project.html?slug=${encodeURIComponent(slug)}`)
-    );
-    window.addEventListener('beforeunload', () => scene.dispose());
-
-    initGalleryList({
-      projects,
-      canvasWrap: document.getElementById('hero-canvas-wrap'),
-      listEl: document.getElementById('gallery-list'),
-      sphereBtn: document.getElementById('gallery-sphere-btn'),
-      listBtn: document.getElementById('gallery-list-btn'),
+    const { createHeroScene } = await import('../three/heroScene.js');
+    let current = null;
+    const scene = createHeroScene(canvas, projects, {
+      onSelect: (slug) => navigateWithFade(`/projects/project.html?slug=${encodeURIComponent(slug)}`),
+      onFocus: (project, tint, y, positionOnly) => {
+        if (y != null) labels.style.setProperty('--y', `${(y * 100).toFixed(2)}%`);
+        if (positionOnly) return;
+        if (project !== current) {
+          current = project;
+          labels.classList.toggle('is-on', !!project);
+          if (project) {
+            titleEl.textContent = project.title;
+            catEl.textContent = (project.tags && project.tags[0]) || project.role || '';
+          }
+          root.style.setProperty('--stage-tint', tint || 'transparent');
+        }
+      },
+      onHover: (project) => viewEl.classList.toggle('is-on', !!project),
     });
+    window.addEventListener('beforeunload', () => scene.dispose());
   } catch (err) {
     console.warn('Hero scene failed to initialize, falling back.', err);
-    if (fallback) fallback.hidden = false;
+    fallback.hidden = false;
   }
-
-  // If the user changes their OS motion preference mid-session, don't fight it.
-  window
-    .matchMedia('(prefers-reduced-motion: reduce)')
-    .addEventListener?.('change', (e) => {
-      if (e.matches && fallback) fallback.hidden = false;
-    });
 }
 
-bootHero();
-renderSelectedProjects();
+bootStage();
