@@ -123,7 +123,7 @@ export function createHeroScene(canvas, projects = [], hooks = {}) {
     s: 0, tS: 0, v: 0,               // scroll (panel units), target, velocity (units/s)
     dragging: false, lastX: 0, lastY: 0, lastT: 0, dist: 0,
     px: 0, py: 0, pointerMoved: false,
-    focused: null, hovered: null, idle: 0, lastLabelY: -1,
+    focused: null, hovered: null, idle: 0, exiting: false,
   };
   const PX_PER_UNIT_X = 320;         // horizontal px for one panel step
   const PX_PER_UNIT_Y = 260;         // vertical px for one panel step
@@ -189,6 +189,14 @@ export function createHeroScene(canvas, projects = [], hooks = {}) {
     st.tS += (e.deltaY + e.deltaX) / 700;
   }
 
+  // Intro / exit: a global offset added to the scroll so the whole helix screws
+  // in on load and screws away on selection (matches the reference transition).
+  const anim = { off: 4, from: 4, to: 0, t: 0, dur: 1.4, ease: (x) => 1 - Math.pow(1 - x, 3), done: null };
+  let fade = 0; // 0..1 canvas visibility
+  function runAnim(from, to, dur, ease, done) {
+    anim.from = from; anim.to = to; anim.t = 0; anim.dur = dur; anim.ease = ease; anim.done = done;
+  }
+
   const clock = new THREE.Clock();
   canvas.style.cursor = 'grab';
   canvas.style.touchAction = 'none';
@@ -211,10 +219,21 @@ export function createHeroScene(canvas, projects = [], hooks = {}) {
     }
     st.s += (st.tS - st.s) * (1 - Math.exp(-dt * (st.dragging ? FOLLOW : SETTLE)));
 
+    // Intro/exit offset.
+    if (anim.t < anim.dur) {
+      anim.t = Math.min(anim.dur, anim.t + dt);
+      const k = anim.ease(anim.t / anim.dur);
+      anim.off = anim.from + (anim.to - anim.from) * k;
+      fade = anim.to === 0 ? k : 1 - k;
+      canvas.style.opacity = String(Math.min(1, fade * 1.6));
+      if (anim.t >= anim.dur && anim.done) { const d = anim.done; anim.done = null; d(); }
+    }
+
     // Place panels on the helix relative to the scroll position.
     let best = null; let bestD = 0.5;
+    const s = st.s + anim.off;
     for (const m of meshes) {
-      const idx = wrap(m.userData.i - st.s);
+      const idx = wrap(m.userData.i - s);
       m.userData.idx = idx;
       m.rotation.y = -idx * DA;
       m.position.y = -idx * DY;
@@ -222,12 +241,12 @@ export function createHeroScene(canvas, projects = [], hooks = {}) {
       if (d < bestD) { bestD = d; best = m; }
     }
 
-    if (best !== st.focused) {
+    if (best !== st.focused && !st.exiting) {
       st.focused = best;
       onFocus(best ? best.userData.project : null, best ? best.userData : null);
     }
 
-    if (st.pointerMoved && !st.dragging) {
+    if (st.pointerMoved && !st.dragging && !st.exiting) {
       st.pointerMoved = false;
       const m = pick(st.px, st.py);
       const h = m && m === best ? m : null;
@@ -257,7 +276,16 @@ export function createHeroScene(canvas, projects = [], hooks = {}) {
   canvas.addEventListener('contextmenu', (e) => e.preventDefault());
   tick();
 
+  canvas.style.opacity = '0';
+  canvas.style.transition = 'none';
+
   return {
+    /** Screw the helix away and fade out, then call done(). */
+    exit(done) {
+      st.dragging = false; st.v = 0; st.tS = st.s; st.exiting = true;
+      canvas.style.cursor = 'default';
+      runAnim(0, -5, 0.75, (x) => x * x * x, done);
+    },
     dispose() {
       dead = true;
       if (frame) cancelAnimationFrame(frame);

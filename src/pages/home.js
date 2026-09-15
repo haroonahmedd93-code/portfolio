@@ -62,7 +62,12 @@ async function bootStage() {
     const { createHeroScene } = await import('../three/heroScene.js');
     let current = null;
     const scene = createHeroScene(canvas, projects, {
-      onSelect: (slug) => navigateWithFade(`/projects/project.html?slug=${encodeURIComponent(slug)}`),
+      onSelect: (slug) => {
+        // Reference transition: helix twirls away, chrome dims, then the page changes.
+        labels.classList.remove('is-on');
+        bgLayers.forEach((l) => (l.style.opacity = '0'));
+        scene.exit(() => navigateWithFade(`/projects/project.html?slug=${encodeURIComponent(slug)}`, 250));
+      },
       onFocus: (project, data) => {
         if (project === current) return;
         current = project;

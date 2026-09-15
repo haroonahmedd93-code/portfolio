@@ -38,10 +38,15 @@ export async function initProjectDetail() {
   if (email && site.email) email.href = `mailto:${site.email}`;
   document.getElementById('case-close').addEventListener('click', (e) => { e.preventDefault(); navigateWithFade('/'); });
 
-  const next = projects[(index + 1) % projects.length];
   const links = (project.links || []).filter((l) => l.url && l.url !== '#');
+  const others = projects.filter((p) => p !== project);
+
+  // Blurred backdrop in the project's own gradient (same one its gallery panel uses).
+  const bg = document.getElementById('case-bg');
+  if (bg) { bg.className = `case__bg ${gradientClass(`${project.slug}-0`, 0)}`; requestAnimationFrame(() => bg.classList.add('is-on')); }
 
   root.innerHTML = `
+    <aside class="case__side">
     <section class="case__meta">
       ${field('Overview', paras(project.summary))}
       ${links.length ? `<div class="case__field case__links">${links.map((l) => `<a href="${esc(l.url)}" target="_blank" rel="noopener">[${esc(l.label)}]</a>`).join('')}</div>` : ''}
@@ -51,20 +56,25 @@ export async function initProjectDetail() {
       ${field('Tags', esc((project.tags || []).join(', ')))}
     </section>
 
-    <section class="case__gallery">${mediaMarkup(project)}</section>
-
     <section class="case__study">
       ${field('Challenge', paras(project.challenge))}
       ${field('Solution', paras(project.solution))}
       ${project.outcomes && project.outcomes.length ? field('Outcomes', `<ul class="case__list">${project.outcomes.map((o) => `<li>${esc(o)}</li>`).join('')}</ul>`) : ''}
       ${project.body ? field('Process', paras(project.body)) : ''}
     </section>
+    </aside>
 
-    ${next && next !== project ? `<a class="case__next" href="/projects/project.html?slug=${encodeURIComponent(next.slug)}" data-next>
-      <span class="case__label">Next project</span>
-      <span class="case__next-title">${esc(next.title)}</span>
-      <span class="case__label">${esc(cat(next))} · ${esc(next.year || '')}</span>
-    </a>` : ''}
+    <section class="case__gallery">${mediaMarkup(project)}</section>
+
+    ${others.length ? `<section class="case__others">
+      <span class="case__label">Other projects</span>
+      ${others.map((p) => `<a class="case__other" href="/projects/project.html?slug=${encodeURIComponent(p.slug)}" data-next>
+        <span class="case__label">${String(projects.indexOf(p) + 1).padStart(2, '0')}</span>
+        <span>${esc(p.title)}</span>
+        <span class="case__label">${esc(cat(p))}</span>
+        <span class="case__label">${esc(p.year || '')}</span>
+      </a>`).join('')}
+    </section>` : ''}
   `;
-  root.querySelector('[data-next]')?.addEventListener('click', (e) => { e.preventDefault(); navigateWithFade(e.currentTarget.href); });
+  root.querySelectorAll('[data-next]').forEach((a) => a.addEventListener('click', (e) => { e.preventDefault(); navigateWithFade(a.href); }));
 }
