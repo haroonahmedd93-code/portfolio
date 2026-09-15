@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Haroon Ahmed Butt — Senior Product Designer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400&display=swap">
+<link rel="stylesheet" href="style.css">
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/","gsap":"https://cdn.jsdelivr.net/npm/gsap@3.12.5/index.js","lenis":"https://cdn.jsdelivr.net/npm/lenis@1.1.20/dist/lenis.mjs"}}</script>
+</head>
+<body>
+<div id="scroll-spacer"></div>
+<div id="container"></div>
+
+<div class="ui" id="home-ui">
+  <a class="name" href="/">Haroon Ahmed Butt</a>
+  <div class="status">Senior product designer
+available for work</div>
+  <div class="clock" id="clock">DXB</div>
+  <div class="mid" id="mid">
+    <span id="m-title"></span><span class="h" id="m-type"></span><span class="h" id="m-client"></span><span class="h" id="m-year"></span><span class="r" id="m-index"></span>
+  </div>
+  <nav class="nav">
+    <a class="active" href="/"><span class="b">[·]</span>Work</a>
+    <a href="/about/"><span class="b">[ ]</span>About</a>
+    <a href="/contact/"><span class="b">[ ]</span>Contact</a>
+  </nav>
+  <div class="view">
+    <button class="active" data-view="spiral"><span class="b">[·]</span>Gallery</button>
+    <button data-view="list"><span class="b">[ ]</span>List</button>
+  </div>
+  <div class="contact"><a href="/resume.pdf">[Resume]</a><br><a href="mailto:habutt@gmail.com">[Email]</a></div>
+</div>
+
+<div id="list"></div>
+
+<section id="project">
+  <div class="head"><a href="/">Haroon Ahmed Butt</a><span id="p-type"></span><span class="r" id="p-index"></span></div>
+  <button class="back" id="back"><span class="b">[←]</span>Back to work</button>
+  <h1 id="p-title"></h1>
+  <div class="hero" id="p-hero"></div>
+  <div class="meta"><div><b id="p-client"></b>Client</div><div><b id="p-role"></b>Role</div><div><b id="p-year"></b>Year</div><div><b id="p-tags"></b>Scope</div></div>
+  <p id="p-body"></p>
+</section>
+
+<div class="cursor" id="cursor">[open]</div>
+<script type="module" src="main.js"></script>
+</body>
+</html>
