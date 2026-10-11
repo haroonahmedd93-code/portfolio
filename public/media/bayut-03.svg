@@ -1,14 +1,14 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1000" viewBox="0 0 1600 1000" role="img" aria-label="BAYUT placeholder">
   <defs>
-    <linearGradient id="go7hb2w" x1="0" y1="0" x2="1" y2="1">
+    <linearGradient id="gc7yxog" x1="0" y1="0" x2="1" y2="1">
       <stop offset="0" stop-color="#0a0b24"/><stop offset=".55" stop-color="#7b3cff" stop-opacity=".55"/><stop offset="1" stop-color="#6ff6ff" stop-opacity=".75"/>
     </linearGradient>
-    <radialGradient id="ro7hb2w" cx="70%" cy="20%" r="70%">
+    <radialGradient id="rc7yxog" cx="70%" cy="20%" r="70%">
       <stop offset="0" stop-color="#6ff6ff" stop-opacity=".5"/><stop offset="1" stop-color="#0a0b24" stop-opacity="0"/>
     </radialGradient>
   </defs>
-  <rect width="1600" height="1000" rx="24" fill="url(#go7hb2w)"/>
-  <rect width="1600" height="1000" rx="24" fill="url(#ro7hb2w)"/>
+  <rect width="1600" height="1000" rx="24" fill="url(#gc7yxog)"/>
+  <rect width="1600" height="1000" rx="24" fill="url(#rc7yxog)"/>
   <g fill="rgba(255,255,255,.08)">
     <rect x="96" y="80" width="352" height="35" rx="17.5"/>
     <rect x="96" y="160" width="1408" height="90" rx="20"/>

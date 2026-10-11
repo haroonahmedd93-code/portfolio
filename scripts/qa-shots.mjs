@@ -4,7 +4,7 @@ import { mkdirSync } from 'node:fs';
 const base = process.argv[2] ?? 'http://localhost:4173';
 const widths = [1440, 1024, 768, 390];
 mkdirSync('qa', { recursive: true });
-const browser = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium' });
+const browser = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium', args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader'] });
 const errors = [];
 for (const path of ['/', '/cases/bayut/']) {
   for (const w of widths) {

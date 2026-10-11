@@ -1,14 +1,14 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="390" height="844" viewBox="0 0 390 844" role="img" aria-label="YALLAMOTOR placeholder">
   <defs>
-    <linearGradient id="gp8v1xk" x1="0" y1="0" x2="1" y2="1">
+    <linearGradient id="g2hnv68" x1="0" y1="0" x2="1" y2="1">
       <stop offset="0" stop-color="#120a0b"/><stop offset=".55" stop-color="#e04bff" stop-opacity=".55"/><stop offset="1" stop-color="#e8742e" stop-opacity=".75"/>
     </linearGradient>
-    <radialGradient id="rp8v1xk" cx="70%" cy="20%" r="70%">
+    <radialGradient id="r2hnv68" cx="70%" cy="20%" r="70%">
       <stop offset="0" stop-color="#e8742e" stop-opacity=".5"/><stop offset="1" stop-color="#120a0b" stop-opacity="0"/>
     </radialGradient>
   </defs>
-  <rect width="390" height="844" rx="48" fill="url(#gp8v1xk)"/>
-  <rect width="390" height="844" rx="48" fill="url(#rp8v1xk)"/>
+  <rect width="390" height="844" rx="48" fill="url(#g2hnv68)"/>
+  <rect width="390" height="844" rx="48" fill="url(#r2hnv68)"/>
   <g fill="rgba(255,255,255,.08)">
     <rect x="23.4" y="67.52" width="85.8" height="29.540000000000003" rx="14.770000000000001"/>
     <rect x="23.4" y="135.04" width="343.2" height="75.96" rx="16.88"/>

@@ -63,7 +63,7 @@ for (const [slug, kinds] of Object.entries(frames)) {
     write(`${slug}-${String(i + 1).padStart(2, '0')}`, svg(w, h, pal, label, { sub: `Screen ${i + 1} · placeholder`, radius: kind === 'phone' ? 48 : 24 }));
   });
   write(`${slug}-hero`, svg(1920, 1080, pal, label, { sub: 'Case hero · placeholder', radius: 0 }));
-  for (let t = 1; t <= 3; t++) write(`tile-${slug}-${t}`, svg(1200, 900, pal, label, { sub: `Tile ${t}`, radius: 0 }));
+  for (let t = 1; t <= 3; t++) write(`tile-${slug}-${t}`, svg(1200, 1200, pal, label, { sub: `Tile ${t}`, radius: 0 }));
 }
 
 write('portrait', svg(900, 1200, palettes.portrait, '', { ui: false, radius: 0, sub: 'Portrait · placeholder' }));

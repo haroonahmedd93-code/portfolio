@@ -1,14 +1,14 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" role="img" aria-label="HAROON AHMED BUTT placeholder">
   <defs>
-    <linearGradient id="gitweso" x1="0" y1="0" x2="1" y2="1">
+    <linearGradient id="gl1zjh7" x1="0" y1="0" x2="1" y2="1">
       <stop offset="0" stop-color="#0a0b24"/><stop offset=".55" stop-color="#7b3cff" stop-opacity=".55"/><stop offset="1" stop-color="#6ff6ff" stop-opacity=".75"/>
     </linearGradient>
-    <radialGradient id="ritweso" cx="70%" cy="20%" r="70%">
+    <radialGradient id="rl1zjh7" cx="70%" cy="20%" r="70%">
       <stop offset="0" stop-color="#6ff6ff" stop-opacity=".5"/><stop offset="1" stop-color="#0a0b24" stop-opacity="0"/>
     </radialGradient>
   </defs>
-  <rect width="1200" height="630" rx="0" fill="url(#gitweso)"/>
-  <rect width="1200" height="630" rx="0" fill="url(#ritweso)"/>
+  <rect width="1200" height="630" rx="0" fill="url(#gl1zjh7)"/>
+  <rect width="1200" height="630" rx="0" fill="url(#rl1zjh7)"/>
   <text x="600" y="330.4" fill="rgba(255,255,255,.9)" font-family="Big Shoulders Display, Impact, sans-serif" font-weight="900" font-size="44" letter-spacing="-.01em" text-anchor="middle">HAROON AHMED BUTT</text>
   <text x="600" y="363.4" fill="rgba(255,255,255,.55)" font-family="Instrument Sans, Helvetica, Arial, sans-serif" font-size="18.48" text-anchor="middle">Senior Product Designer · Dubai</text>
 </svg>

@@ -32,7 +32,16 @@ export default defineConfig({
   plugins: [renderContent()],
   build: {
     target: 'es2022',
-    rollupOptions: { input },
+    rollupOptions: {
+      input,
+      output: {
+        manualChunks: {
+          three: ['three'],
+          gsap: ['gsap', 'gsap/ScrollTrigger', 'gsap/InertiaPlugin'],
+          lenis: ['lenis'],
+        },
+      },
+    },
     assetsInlineLimit: 0,
   },
   server: { port: 5173 },

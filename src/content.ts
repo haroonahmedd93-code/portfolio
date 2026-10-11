@@ -86,7 +86,8 @@ export const site: Site = {
 export const hero = {
   // PLACEHOLDER hero line (plan: "I design complex products 0 → 1")
   lede: 'I design complex products 0 → 1',
-  title: ['SENIOR', 'PRODUCT', 'DESIGNER'],
+  // One line on desktop (wraps naturally on small screens). Haroon asked to keep this title.
+  title: 'STAFF PRODUCT DESIGNER',
   script: site.location,
 };
 

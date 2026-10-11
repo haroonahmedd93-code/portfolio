@@ -1,14 +1,14 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1000" viewBox="0 0 1600 1000" role="img" aria-label="TRUEFRAME placeholder">
   <defs>
-    <linearGradient id="gxvn4qq" x1="0" y1="0" x2="1" y2="1">
+    <linearGradient id="gg4ggif" x1="0" y1="0" x2="1" y2="1">
       <stop offset="0" stop-color="#06070f"/><stop offset=".55" stop-color="#6ff6ff" stop-opacity=".55"/><stop offset="1" stop-color="#7b3cff" stop-opacity=".75"/>
     </linearGradient>
-    <radialGradient id="rxvn4qq" cx="70%" cy="20%" r="70%">
+    <radialGradient id="rg4ggif" cx="70%" cy="20%" r="70%">
       <stop offset="0" stop-color="#7b3cff" stop-opacity=".5"/><stop offset="1" stop-color="#06070f" stop-opacity="0"/>
     </radialGradient>
   </defs>
-  <rect width="1600" height="1000" rx="24" fill="url(#gxvn4qq)"/>
-  <rect width="1600" height="1000" rx="24" fill="url(#rxvn4qq)"/>
+  <rect width="1600" height="1000" rx="24" fill="url(#gg4ggif)"/>
+  <rect width="1600" height="1000" rx="24" fill="url(#rg4ggif)"/>
   <g fill="rgba(255,255,255,.08)">
     <rect x="96" y="80" width="352" height="35" rx="17.5"/>
     <rect x="96" y="160" width="1408" height="90" rx="20"/>

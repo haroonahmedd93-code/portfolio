@@ -1,41 +1,68 @@
 /* ==========================================================================
-   #intro — lede line, display title, script location, project wall behind
-   Stage 1: static CSS-grid wall. Stage 3 replaces it with the Three.js wall.
+   #intro — dome wall behind, type anchored to the bottom of the viewport.
+   The section is 250vh tall; .lede-stage sticks for the scroll dolly.
    ========================================================================== */
 
 .section--lede {
-  min-height: 100svh;
-  display: grid;
-  place-items: center;
-  padding-top: calc(var(--header-h) + var(--section-pad));
+  height: 250svh;
+  padding: 0;
+}
+.section--lede .lede-stage {
+  position: sticky;
+  top: 0;
+  height: 100svh;
   overflow: hidden;
   isolation: isolate;
+  background: var(--c-bg);
+}
+.no-js .section--lede,
+.section--lede .lede-stage.is-static {
+  height: 100svh;
 }
 
 /* ---- Wall ---------------------------------------------------------------- */
 .wall {
   position: absolute;
   inset: 0;
-  z-index: -1;
-  display: grid;
-  place-items: center;
-  perspective: 1400px;
-  overflow: hidden;
+  z-index: 0;
 }
+.wall__gl {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  touch-action: pan-y; /* vertical scroll stays native on touch; horizontal drag rotates */
+  cursor: grab;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.wall__gl.is-dragging {
+  cursor: grabbing;
+}
+.wall--static .wall__gl,
+.no-js .wall__gl {
+  display: none;
+}
+
+/* Static fallback (reduced motion / no WebGL): a flat, dimmed grid */
 .wall__grid {
-  --cols: 4;
-  --tile-w: clamp(220px, 24vw, 380px);
+  --tile: 19.2vw;
+  position: absolute;
+  left: 50%;
+  top: 50%;
   display: grid;
-  grid-template-columns: repeat(var(--cols), var(--tile-w));
-  gap: var(--gap);
-  width: max-content;
-  transform: translateZ(-420px) rotateX(8deg) scale(1.12);
-  transform-style: preserve-3d;
-  opacity: 0.55;
+  grid-template-columns: repeat(6, var(--tile));
+  gap: 2.2vw;
+  transform: translate(-50%, -54%);
+  opacity: 0.7;
+}
+.wall--gl .wall__grid,
+.js .wall--gl .wall__grid {
+  display: none;
 }
 .wall__tile {
-  aspect-ratio: 4 / 3;
-  border-radius: 14px;
+  aspect-ratio: 1;
+  border-radius: 16px;
   overflow: hidden;
   background: #111;
 }
@@ -44,43 +71,78 @@
   height: 100%;
   object-fit: cover;
 }
+
+/* Vignette: dark floor under the type, soft edges */
 .wall__vignette {
   position: absolute;
   inset: 0;
+  pointer-events: none;
   background:
-    radial-gradient(ellipse 60% 55% at 50% 50%, rgba(0, 0, 0, 0.25) 0%, rgba(0, 0, 0, 0.78) 60%, #000 100%),
-    linear-gradient(to bottom, rgba(0, 0, 0, 0.6), transparent 25%, transparent 70%, #000);
+    linear-gradient(to bottom, rgba(0, 0, 0, 0.55) 0%, rgba(0, 0, 0, 0) 18%, rgba(0, 0, 0, 0) 48%, rgba(0, 0, 0, 0.72) 74%, #000 100%),
+    radial-gradient(ellipse 80% 70% at 50% 40%, rgba(0, 0, 0, 0) 55%, rgba(0, 0, 0, 0.55) 100%);
+}
+.wall__fade {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: #000;
+  opacity: 0;
 }
 
-/* ---- Lede ---------------------------------------------------------------- */
+/* ---- Lede (bottom-anchored type) ----------------------------------------- */
 .lede {
-  position: relative;
+  position: absolute;
+  left: var(--gutter);
+  right: var(--gutter);
+  bottom: 5.5svh;
+  z-index: 1;
   display: grid;
   justify-items: center;
   text-align: center;
-  gap: 1.25rem;
+  pointer-events: none;
+}
+.lede a,
+.lede button {
+  pointer-events: auto;
 }
 .lede__line {
-  font-size: var(--fs-lead);
+  font-size: clamp(0.9rem, 0.95vw, 1.1rem);
   color: var(--c-fg-soft);
+  margin-bottom: 1.2svh;
 }
 .lede__title {
-  position: relative;
+  overflow: hidden; /* mask for the H2 rise */
+  padding-inline: 0.05em; /* keep the stroke from clipping */
+  line-height: 0.95;
+  white-space: nowrap;
+}
+.lede__title-inner {
+  display: inline-block;
 }
 .lede__script {
   position: relative;
-  margin-top: calc(var(--fs-display-xl) * -0.38); /* overlaps the bottom display line by ~0.35em of the display size */
-  transform: rotate(-4deg);
-  z-index: 1;
+  z-index: 2;
+  font-size: min(7svh, 6vw);
+  line-height: 1;
+  margin-top: calc(var(--display-size) * -0.16); /* ascenders touch the title baseline */
+  padding-inline: 0.2em;
 }
 
 @media (max-width: 767px) {
-  .wall__grid {
-    --cols: 3;
-    --tile-w: 44vw;
-    transform: translateZ(-300px) scale(1.15);
-  }
   .lede {
-    gap: 1rem;
+    bottom: 7svh;
+  }
+  .lede__title {
+    white-space: normal;
+    text-wrap: balance;
+  }
+  .lede__script {
+    font-size: 8.5vw;
+    margin-top: calc(var(--display-size) * -0.1);
+  }
+  .wall__grid {
+    --tile: 42vw;
+    gap: 4vw;
+    grid-template-columns: repeat(4, var(--tile));
   }
 }

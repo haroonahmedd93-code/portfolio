@@ -1,21 +1,21 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="900" viewBox="0 0 1200 900" role="img" aria-label="MOTIVE placeholder">
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="1200" viewBox="0 0 1200 1200" role="img" aria-label="MOTIVE placeholder">
   <defs>
-    <linearGradient id="g4ihthr" x1="0" y1="0" x2="1" y2="1">
+    <linearGradient id="g0xsl38" x1="0" y1="0" x2="1" y2="1">
       <stop offset="0" stop-color="#0a0b24"/><stop offset=".55" stop-color="#e8742e" stop-opacity=".55"/><stop offset="1" stop-color="#e04bff" stop-opacity=".75"/>
     </linearGradient>
-    <radialGradient id="r4ihthr" cx="70%" cy="20%" r="70%">
+    <radialGradient id="r0xsl38" cx="70%" cy="20%" r="70%">
       <stop offset="0" stop-color="#e04bff" stop-opacity=".5"/><stop offset="1" stop-color="#0a0b24" stop-opacity="0"/>
     </radialGradient>
   </defs>
-  <rect width="1200" height="900" rx="0" fill="url(#g4ihthr)"/>
-  <rect width="1200" height="900" rx="0" fill="url(#r4ihthr)"/>
+  <rect width="1200" height="1200" rx="0" fill="url(#g0xsl38)"/>
+  <rect width="1200" height="1200" rx="0" fill="url(#r0xsl38)"/>
   <g fill="rgba(255,255,255,.08)">
-    <rect x="72" y="72" width="264" height="31.500000000000004" rx="15.750000000000002"/>
-    <rect x="72" y="144" width="1056" height="81" rx="18"/>
-    <rect x="72" y="270" width="504" height="504.00000000000006" rx="18"/>
-    <rect x="624" y="270" width="504" height="234" rx="18"/>
-    <rect x="624" y="540" width="504" height="234" rx="18"/>
+    <rect x="72" y="96" width="264" height="42.00000000000001" rx="21.000000000000004"/>
+    <rect x="72" y="192" width="1056" height="108" rx="24"/>
+    <rect x="72" y="360" width="504" height="672.0000000000001" rx="24"/>
+    <rect x="624" y="360" width="504" height="312" rx="24"/>
+    <rect x="624" y="720" width="504" height="312" rx="24"/>
   </g>
-  <text x="600" y="472.05" fill="rgba(255,255,255,.9)" font-family="Big Shoulders Display, Impact, sans-serif" font-weight="900" font-size="63" letter-spacing="-.01em" text-anchor="middle">MOTIVE</text>
-  <text x="600" y="519.3" fill="rgba(255,255,255,.55)" font-family="Instrument Sans, Helvetica, Arial, sans-serif" font-size="26.459999999999997" text-anchor="middle">Tile 2</text>
+  <text x="600" y="629.4" fill="rgba(255,255,255,.9)" font-family="Big Shoulders Display, Impact, sans-serif" font-weight="900" font-size="84" letter-spacing="-.01em" text-anchor="middle">MOTIVE</text>
+  <text x="600" y="692.4" fill="rgba(255,255,255,.55)" font-family="Instrument Sans, Helvetica, Arial, sans-serif" font-size="35.28" text-anchor="middle">Tile 2</text>
 </svg>

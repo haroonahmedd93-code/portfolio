@@ -16,8 +16,8 @@
     "three": "^0.186.1"
   },
   "devDependencies": {
-    "@fontsource-variable/big-shoulders-display": "^5.3.0",
     "@fontsource-variable/instrument-sans": "^5.3.0",
+    "@fontsource-variable/league-gothic": "^5.3.0",
     "@fontsource/mrs-saint-delafield": "^5.3.0",
     "@types/node": "^26.6.5",
     "@types/three": "^0.186.0",

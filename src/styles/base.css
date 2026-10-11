@@ -125,7 +125,10 @@ button {
 
 .display {
   font-family: var(--font-display);
-  font-weight: 900;
+  font-weight: 400;
+  font-stretch: 100%;
+  -webkit-text-stroke: var(--display-stroke) currentColor;
+  paint-order: stroke fill;
   text-transform: uppercase;
   letter-spacing: var(--ls-display);
   line-height: var(--lh-display);

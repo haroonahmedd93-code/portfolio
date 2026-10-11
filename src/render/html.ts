@@ -32,7 +32,7 @@ export function renderHead(opts: { title: string; description: string; path: str
   <meta property="og:image" content="${site.url}${opts.image ?? '/media/og.svg'}" />
   <meta name="twitter:card" content="summary_large_image" />
   <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
-  <link rel="preload" href="/fonts/big-shoulders-display-latin.woff2" as="font" type="font/woff2" crossorigin />
+  <link rel="preload" href="/fonts/league-gothic-latin.woff2" as="font" type="font/woff2" crossorigin />
   <link rel="preload" href="/fonts/instrument-sans-latin.woff2" as="font" type="font/woff2" crossorigin />
   <link rel="preload" href="/fonts/mrs-saint-delafield-latin.woff2" as="font" type="font/woff2" crossorigin />`;
 }
@@ -78,19 +78,25 @@ function renderIntro() {
   const tiles = heroTiles
     .map(
       (t, i) =>
-        `<li class="wall__tile" style="--i:${i}"><img src="${t.src}" alt="" width="1200" height="900" loading="${i < 4 ? 'eager' : 'lazy'}" decoding="async" /></li>`,
+        `<li class="wall__tile" style="--i:${i}"><img src="${t.src}" alt="" width="1200" height="1200" loading="${i < 4 ? 'eager' : 'lazy'}" decoding="async" /></li>`,
     )
     .join('');
+  const preload = heroTiles.slice(0, 12).map((t) => `<link rel="preload" as="image" href="${t.src}" />`).join('');
   return `
+${preload}
 <section id="intro" class="section section--lede" aria-labelledby="intro-title">
-  <div class="wall" aria-hidden="true">
-    <ul class="wall__grid">${tiles}</ul>
-    <div class="wall__vignette"></div>
-  </div>
-  <div class="lede">
-    <p class="lede__line">${esc(hero.lede)}</p>
-    <h1 id="intro-title" class="display display--xl lede__title">${lines(hero.title)}</h1>
-    <p class="lede__script script">${esc(hero.script)}</p>
+  <div class="lede-stage">
+    <div class="wall" data-wall>
+      <canvas class="wall__gl" data-wall-canvas aria-hidden="true"></canvas>
+      <ul class="wall__grid" data-wall-fallback aria-hidden="true">${tiles}</ul>
+      <div class="wall__vignette" aria-hidden="true"></div>
+      <div class="wall__fade" data-wall-fade aria-hidden="true"></div>
+    </div>
+    <div class="lede" data-lede>
+      <p class="lede__line" data-lede-line>${esc(hero.lede)}</p>
+      <h1 id="intro-title" class="display display--xl lede__title" data-lede-title><span class="lede__title-inner">${esc(hero.title)}</span></h1>
+      <p class="lede__script script" data-lede-script>${esc(hero.script)}</p>
+    </div>
   </div>
 </section>`;
 }
