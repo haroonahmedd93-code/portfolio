@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080" viewBox="0 0 1920 1080" role="img" aria-label="MOTIVE placeholder">
+  <defs>
+    <linearGradient id="gbf5l1u" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0a0b24"/><stop offset=".55" stop-color="#e8742e" stop-opacity=".55"/><stop offset="1" stop-color="#e04bff" stop-opacity=".75"/>
+    </linearGradient>
+    <radialGradient id="rbf5l1u" cx="70%" cy="20%" r="70%">
+      <stop offset="0" stop-color="#e04bff" stop-opacity=".5"/><stop offset="1" stop-color="#0a0b24" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="1920" height="1080" rx="0" fill="url(#gbf5l1u)"/>
+  <rect width="1920" height="1080" rx="0" fill="url(#rbf5l1u)"/>
+  <g fill="rgba(255,255,255,.08)">
+    <rect x="115.19999999999999" y="86.4" width="422.4" height="37.800000000000004" rx="18.900000000000002"/>
+    <rect x="115.19999999999999" y="172.8" width="1689.6" height="97.2" rx="21.6"/>
+    <rect x="115.19999999999999" y="324" width="806.4" height="604.8000000000001" rx="21.6"/>
+    <rect x="998.4000000000001" y="324" width="806.4" height="280.8" rx="21.6"/>
+    <rect x="998.4000000000001" y="648" width="806.4" height="280.8" rx="21.6"/>
+  </g>
+  <text x="960" y="566.6" fill="rgba(255,255,255,.9)" font-family="Big Shoulders Display, Impact, sans-serif" font-weight="900" font-size="76" letter-spacing="-.01em" text-anchor="middle">MOTIVE</text>
+  <text x="960" y="623.6" fill="rgba(255,255,255,.55)" font-family="Instrument Sans, Helvetica, Arial, sans-serif" font-size="31.919999999999998" text-anchor="middle">Case hero · placeholder</text>
+</svg>

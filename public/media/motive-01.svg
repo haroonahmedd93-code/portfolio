@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1000" viewBox="0 0 1600 1000" role="img" aria-label="MOTIVE placeholder">
+  <defs>
+    <linearGradient id="g35p9xf" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0a0b24"/><stop offset=".55" stop-color="#e8742e" stop-opacity=".55"/><stop offset="1" stop-color="#e04bff" stop-opacity=".75"/>
+    </linearGradient>
+    <radialGradient id="r35p9xf" cx="70%" cy="20%" r="70%">
+      <stop offset="0" stop-color="#e04bff" stop-opacity=".5"/><stop offset="1" stop-color="#0a0b24" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="1600" height="1000" rx="24" fill="url(#g35p9xf)"/>
+  <rect width="1600" height="1000" rx="24" fill="url(#r35p9xf)"/>
+  <g fill="rgba(255,255,255,.08)">
+    <rect x="96" y="80" width="352" height="35" rx="17.5"/>
+    <rect x="96" y="160" width="1408" height="90" rx="20"/>
+    <rect x="96" y="300" width="672" height="560" rx="20"/>
+    <rect x="832" y="300" width="672" height="260" rx="20"/>
+    <rect x="832" y="600" width="672" height="260" rx="20"/>
+  </g>
+  <text x="800" y="524.5" fill="rgba(255,255,255,.9)" font-family="Big Shoulders Display, Impact, sans-serif" font-weight="900" font-size="70" letter-spacing="-.01em" text-anchor="middle">MOTIVE</text>
+  <text x="800" y="577" fill="rgba(255,255,255,.55)" font-family="Instrument Sans, Helvetica, Arial, sans-serif" font-size="29.4" text-anchor="middle">Screen 1 · placeholder</text>
+</svg>

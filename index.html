@@ -1,67 +1,12 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" class="no-js">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>[YOUR_NAME] — [YOUR_ROLE]</title>
-  <meta name="description" content="Portfolio of [YOUR_NAME], [YOUR_ROLE]." />
-  <meta property="og:title" content="[YOUR_NAME] — [YOUR_ROLE]" />
-  <meta property="og:image" content="/images/og-cover.svg" />
-  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Geist+Mono:wght@300;400&family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600&family=Inter:wght@400;500&display=swap" rel="stylesheet" />
+  <!--@head-->
+  <script type="module" src="/src/main.ts"></script>
 </head>
 <body data-page="home">
-  <a class="skip-link" href="#main">Skip to content</a>
-  <header id="site-nav" hidden></header>
-
-  <div class="stage__scroll" id="stage-scroll" aria-hidden="true"></div>
-  <main id="main" class="stage">
-    <div class="stage__bg" id="stage-bg-a"></div>
-    <div class="stage__bg" id="stage-bg-b"></div>
-    <div class="stage__overlay"></div>
-    <div class="stage__canvas" id="hero-canvas-wrap">
-      <canvas id="hero-canvas"></canvas>
-      <div id="hero-fallback" hidden class="stage__fallback"></div>
-    </div>
-
-    <div class="stage__labels" id="stage-labels" aria-live="polite">
-      <span class="stage__label" id="focus-title"></span>
-      <span class="stage__label" id="focus-cat"></span>
-      <span class="stage__label stage__label--r" id="focus-year"></span>
-      <span class="stage__label stage__label--r" id="focus-idx"></span>
-    </div>
-    <div class="stage__cursor" id="stage-cursor" aria-hidden="true">[View project]</div>
-
-    <div class="gallery-list" id="gallery-list" hidden data-lenis-prevent></div>
-
-    <div class="stage__corner stage__corner--tl">
-      <span id="hero-name">[YOUR_NAME]</span>
-    </div>
-    <div class="stage__corner stage__corner--tc">
-      <span id="hero-role">[YOUR_ROLE]</span><br />
-      <span>Available for work</span>
-    </div>
-    <div class="stage__corner stage__corner--tr">
-      <span id="stage-clock">DXB</span><br />
-      <span id="stage-phase"></span>
-    </div>
-    <nav class="stage__corner stage__corner--bl" aria-label="Primary">
-      <a href="/projects/"><i>[·]</i> Work</a>
-      <a href="/about/"><i>[ ]</i> About</a>
-      <a href="/contact/"><i>[ ]</i> Contact</a>
-    </nav>
-    <div class="stage__corner stage__corner--bc" role="group" aria-label="Gallery view">
-      <button type="button" id="gallery-sphere-btn" aria-pressed="true"><i>[·]</i> Gallery</button>
-      <button type="button" id="gallery-list-btn" aria-pressed="false"><i>[ ]</i> List</button>
-    </div>
-    <div class="stage__corner stage__corner--br">
-      <a href="/resume.pdf">[Resume]</a>
-      <a id="hero-email-link" href="mailto:[YOUR_EMAIL]">[Email]</a>
-    </div>
-  </main>
-
-  <script type="module" src="/src/pages/home.js"></script>
+<!--@body-->
 </body>
 </html>

@@ -1,0 +1,123 @@
+/* ==========================================================================
+   Header: logo · pill nav / chapter pill · email
+   ========================================================================== */
+
+.header {
+  position: fixed;
+  inset: 0 0 auto 0;
+  z-index: 50;
+  height: var(--header-h);
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  padding-inline: var(--gutter);
+  pointer-events: none;
+}
+.header > * {
+  pointer-events: auto;
+}
+
+.header__logo {
+  justify-self: start;
+  display: inline-flex;
+  color: var(--c-fg);
+}
+.logo {
+  width: 2.5rem;
+  height: 2.5rem;
+}
+
+.header__email {
+  justify-self: end;
+  font-size: var(--fs-ui);
+}
+
+/* ---- Pill nav ------------------------------------------------------------ */
+.nav {
+  position: relative;
+  isolation: isolate;
+}
+.nav__track {
+  display: flex;
+  gap: 0.25rem;
+  padding: 0.3rem;
+  border-radius: var(--radius-pill);
+  background: var(--c-pill);
+  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(16px);
+  transition: background-color var(--dur-micro) ease-out;
+}
+.nav__link {
+  display: inline-block;
+  padding: 0.6em 1.1em;
+  border-radius: var(--radius-pill);
+  font-size: var(--fs-ui);
+  font-weight: 500;
+  line-height: 1;
+  color: var(--c-fg);
+  transition: color var(--dur-base) var(--ease-snap);
+}
+.nav__link.is-active {
+  color: var(--c-bg);
+  background: var(--c-fg); /* Stage 2 moves this onto the sliding .nav__thumb */
+}
+.nav__thumb {
+  position: absolute;
+  top: 0.3rem;
+  bottom: 0.3rem;
+  left: 0;
+  width: 0;
+  border-radius: var(--radius-pill);
+  background: var(--c-fg);
+  z-index: -1;
+  opacity: 0;
+}
+
+/* ---- Chapter pill (case pages) ------------------------------------------ */
+.chapter-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75em;
+  padding: 0.7em 1.2em;
+  border-radius: var(--radius-pill);
+  background: var(--c-pill);
+  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(16px);
+  font-size: var(--fs-ui);
+  font-weight: 500;
+  line-height: 1;
+  color: var(--c-fg);
+}
+.chapter-pill__num {
+  color: var(--c-fg-mute);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---- Tablet and below: logo + pill, email hidden ----------------------- */
+@media (max-width: 991px) {
+  .header {
+    grid-template-columns: auto 1fr;
+    gap: var(--gap);
+  }
+  .nav,
+  .chapter-pill {
+    justify-self: end;
+  }
+  .header__email {
+    display: none;
+  }
+}
+@media (max-width: 767px) {
+  .nav__link {
+    padding: 0.55em 0.8em;
+  }
+}
+@media (max-width: 479px) {
+  .nav__track {
+    gap: 0;
+  }
+  .nav__link {
+    padding: 0.55em 0.65em;
+    font-size: 0.85rem;
+  }
+}

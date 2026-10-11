@@ -1,0 +1,155 @@
+/* ==========================================================================
+   Case page — head, meta, hero, numbered chapter bands
+   ========================================================================== */
+
+.case {
+  padding-top: calc(var(--header-h) + var(--section-pad));
+}
+
+.case-head {
+  display: grid;
+  gap: 2rem;
+  padding-inline: var(--gutter);
+  max-width: calc(var(--copy-measure) + 2 * var(--gutter) + 20rem);
+  margin-inline: auto;
+}
+.case-head__title {
+  font-size: var(--fs-display-xl);
+}
+.case-head__intro {
+  max-width: var(--copy-measure);
+}
+.case-head__meta {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--gap);
+  padding-block: 1.5rem;
+  border-top: 1px solid var(--c-line-soft);
+  border-bottom: 1px solid var(--c-line-soft);
+}
+.case-head__meta div {
+  display: grid;
+  gap: 0.5rem;
+}
+.case-head__meta dd {
+  color: var(--c-fg);
+  font-size: var(--fs-ui);
+}
+.case-head__hero {
+  margin-top: 1rem;
+  border-radius: var(--radius-frame);
+  overflow: hidden;
+  background: #0a0a0a;
+}
+.case-head__hero img {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+}
+
+/* ---- Bands --------------------------------------------------------------- */
+.bands {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--band-gap);
+  padding-block: var(--band-gap) var(--section-pad);
+  padding-inline: var(--gutter);
+  max-width: calc(var(--copy-measure) + 2 * var(--gutter) + 20rem);
+  margin-inline: auto;
+}
+.band {
+  display: grid;
+  grid-template-columns: minmax(0, 11rem) minmax(0, 1fr);
+  column-gap: 3rem;
+  row-gap: 1.5rem;
+  align-items: start;
+}
+.band__label {
+  grid-column: 1;
+  position: sticky;
+  top: calc(var(--header-h) + 1rem);
+}
+.band__label span {
+  color: var(--c-fg);
+  margin-right: 0.6em;
+  font-variant-numeric: tabular-nums;
+}
+.band__title,
+.band__copy,
+.band__features,
+.metrics {
+  grid-column: 2;
+}
+.band__copy {
+  display: grid;
+  gap: 1.5rem;
+}
+.band__copy .copy {
+  color: var(--c-fg-soft); /* highlight-text (grey → white) arrives in Stage 4 */
+}
+.band__block {
+  display: grid;
+  gap: 0.75rem;
+}
+.band__subtitle {
+  font-size: var(--fs-ui);
+  font-weight: 700;
+  color: var(--c-fg);
+}
+.band__features {
+  display: grid;
+  gap: var(--gap);
+  margin-top: 1rem;
+}
+.band__features .frame--phone {
+  width: min(100%, 24rem);
+  margin-inline: auto;
+}
+
+.metrics {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(9rem, 100%), 1fr));
+  min-width: 0;
+  gap: var(--gap);
+  margin-top: 1rem;
+}
+.metric {
+  min-width: 0;
+  display: grid;
+  gap: 0.5rem;
+  padding: 1.5rem;
+  border: 1px solid var(--c-line-soft);
+  border-radius: 20px;
+}
+.metric__value {
+  font-size: var(--fs-display-m);
+}
+
+.case__visit {
+  padding-left: calc(11rem + 3rem); /* aligns with the bands' second column */
+}
+
+.outro__next {
+  margin-top: -0.5rem;
+}
+
+@media (max-width: 767px) {
+  .case-head__meta {
+    grid-template-columns: 1fr;
+  }
+  .band {
+    grid-template-columns: 1fr;
+  }
+  .band__label {
+    position: static;
+  }
+  .band__title,
+  .band__copy,
+  .band__features,
+  .metrics {
+    grid-column: 1;
+  }
+  .case__visit {
+    padding-left: 0;
+  }
+}

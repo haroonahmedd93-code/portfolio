@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="1200" viewBox="0 0 900 1200" role="img" aria-label=" placeholder">
+  <defs>
+    <linearGradient id="glcjdj7" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#000000"/><stop offset=".55" stop-color="#1b1b1b" stop-opacity=".55"/><stop offset="1" stop-color="#3a2a52" stop-opacity=".75"/>
+    </linearGradient>
+    <radialGradient id="rlcjdj7" cx="70%" cy="20%" r="70%">
+      <stop offset="0" stop-color="#3a2a52" stop-opacity=".5"/><stop offset="1" stop-color="#000000" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="900" height="1200" rx="0" fill="url(#glcjdj7)"/>
+  <rect width="900" height="1200" rx="0" fill="url(#rlcjdj7)"/>
+  <text x="450" y="622.05" fill="rgba(255,255,255,.9)" font-family="Big Shoulders Display, Impact, sans-serif" font-weight="900" font-size="63" letter-spacing="-.01em" text-anchor="middle"></text>
+  <text x="450" y="669.3" fill="rgba(255,255,255,.55)" font-family="Instrument Sans, Helvetica, Arial, sans-serif" font-size="26.459999999999997" text-anchor="middle">Portrait · placeholder</text>
+</svg>

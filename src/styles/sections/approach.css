@@ -1,0 +1,71 @@
+/* ==========================================================================
+   Manifesto + #approach (four pillars)
+   Stage 1: four stacked, static sections = the reduced-motion layout.
+   Stage 4 pins the stage and crossfades scenes.
+   ========================================================================== */
+
+.section--manifesto {
+  padding-block: var(--section-pad-l);
+  display: grid;
+  place-items: center;
+  text-align: center;
+}
+.manifesto {
+  max-width: 30ch;
+}
+.manifesto .line {
+  display: block;
+}
+
+.section--focus {
+  padding-block: 0;
+}
+.approach__stage {
+  display: grid;
+}
+
+.pillar {
+  min-height: 100svh;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: 1fr auto;
+  align-content: center;
+  justify-items: center;
+  text-align: center;
+  gap: 2rem;
+  padding-block: var(--section-pad);
+}
+.pillar__scene {
+  width: min(100%, 56rem);
+  aspect-ratio: 16 / 9;
+  display: grid;
+  place-items: center;
+  border-radius: var(--radius-frame);
+  border: 1px dashed var(--c-line-soft);
+  background: radial-gradient(ellipse at 50% 60%, rgba(255, 255, 255, 0.05), transparent 65%);
+}
+.pillar__scene-label {
+  font-size: var(--fs-micro);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--c-fg-mute);
+}
+.pillar__copy {
+  display: grid;
+  justify-items: center;
+  gap: 1rem;
+  max-width: 44rem;
+}
+.pillar__body {
+  max-width: 34ch;
+}
+
+@media (max-width: 767px) {
+  .pillar {
+    min-height: 80svh;
+    gap: 1.5rem;
+  }
+  .pillar__scene {
+    aspect-ratio: 4 / 3;
+  }
+}

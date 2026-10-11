@@ -1,64 +1,152 @@
+/* ==========================================================================
+   Design tokens — see docs/01-design-tokens.md
+   UI chrome is strictly black and white. Colour lives only in media + scenes.
+   ========================================================================== */
+
+/* ---- Fonts (self-hosted, OFL) ------------------------------------------ */
+@font-face {
+  font-family: 'Big Shoulders Display';
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: block;
+  src: url('/fonts/big-shoulders-display-latin.woff2') format('woff2-variations');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'Instrument Sans';
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url('/fonts/instrument-sans-latin.woff2') format('woff2-variations');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'Mrs Saint Delafield';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/fonts/mrs-saint-delafield-latin.woff2') format('woff2');
+}
+
 :root {
-  /* Color — dark editorial palette */
-  --color-bg: #0b0b0f;
-  --color-bg-raised: #121218;
-  --color-bg-elevated: #17171f;
-  --color-text: #f5f5f2;
-  --color-text-muted: #9a9aa5;
-  --color-text-faint: #6a6a75;
-  --color-border: #24242e;
-  --color-accent: #f2b880;
-  --color-accent-soft: rgba(242, 184, 128, 0.14);
-  --color-focus: #8a8fff;
+  /* ---- Colour ----------------------------------------------------------- */
+  --c-bg: #000000;
+  --c-fg: #ffffff;
+  --c-fg-soft: #fef9ee;
+  --c-fg-mute: rgba(255, 255, 255, 0.56); /* ≥ 4.5:1 on black, incl. --fs-micro */
+  --c-line: rgba(255, 255, 255, 0.7);
+  --c-line-soft: rgba(255, 255, 255, 0.18);
+  --c-pill: rgba(255, 255, 255, 0.08);
 
-  /* Typography */
-  --font-display: "Bricolage Grotesque", "Helvetica Neue", Arial, sans-serif;
-  --font-body: "Inter", "Helvetica Neue", Arial, sans-serif;
-  --font-mono: "IBM Plex Mono", "SFMono-Regular", Consolas, monospace;
+  /* Scene accents — ONLY inside WebGL scenes and project frames */
+  --c-violet: #7b3cff;
+  --c-cyan: #6ff6ff;
+  --c-magenta: #e04bff;
+  --c-orange: #e8742e;
+  --c-navy: #0a0b24;
 
-  --fs-2xs: clamp(0.72rem, 0.7rem + 0.1vw, 0.8rem);
-  --fs-xs: clamp(0.82rem, 0.8rem + 0.1vw, 0.9rem);
-  --fs-sm: clamp(0.95rem, 0.92rem + 0.15vw, 1.05rem);
-  --fs-md: clamp(1.05rem, 1rem + 0.25vw, 1.2rem);
-  --fs-lg: clamp(1.3rem, 1.15rem + 0.75vw, 1.7rem);
-  --fs-xl: clamp(1.8rem, 1.4rem + 2vw, 2.6rem);
-  --fs-2xl: clamp(2.4rem, 1.7rem + 3.5vw, 4rem);
-  --fs-3xl: clamp(3rem, 2rem + 5vw, 6.4rem);
-  --fs-4xl: clamp(3.6rem, 1.5rem + 11vw, 11rem);
+  /* ---- Fluid rem system -------------------------------------------------- */
+  --size-unit: 16;
+  --size-container-ideal: 1660;
+  --size-container-min: 992px;
+  --size-container-max: 1660px;
+  --size-container: clamp(var(--size-container-min), 100vw, var(--size-container-max));
+  --size-font: calc(var(--size-container) / (var(--size-container-ideal) / var(--size-unit)));
 
-  --lh-tight: 0.94;
-  --lh-snug: 1.2;
-  --lh-normal: 1.55;
+  /* ---- Type -------------------------------------------------------------- */
+  --font-display: 'Big Shoulders Display', 'Arial Narrow', Impact, sans-serif;
+  --font-text: 'Instrument Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  --font-script: 'Mrs Saint Delafield', 'Brush Script MT', cursive;
 
-  /* Spacing scale */
-  --space-3xs: 0.25rem;
-  --space-2xs: 0.5rem;
-  --space-xs: 0.75rem;
-  --space-sm: 1rem;
-  --space-md: 1.5rem;
-  --space-lg: 2.5rem;
-  --space-xl: 4rem;
-  --space-2xl: 6rem;
-  --space-3xl: 9rem;
+  --display-size: min(120px, 15vw);
+  --fs-display-xl: var(--display-size);
+  --fs-display-l: clamp(2.75rem, 7vw, 5rem);
+  --fs-display-m: clamp(1.9rem, 5.2vw, 4.1rem);
+  --fs-lead: clamp(1.25rem, 2.6vw, 2.25rem);
+  --fs-body: clamp(1.0625rem, 1.96vw, 1.75rem);
+  --fs-ui: clamp(0.95rem, 1.3vw, 1.25rem);
+  --fs-micro: clamp(11px, 1.2vw, 16px);
+  --fs-script: clamp(2.4rem, 6.4vw, 5.25rem);
 
-  --content-max: 1240px;
+  --lh-display: 0.85;
+  --lh-body: 1.25;
+  --ls-display: -0.01em;
+
+  --copy-measure: calc(24 * var(--fs-body));
+
+  /* ---- Spacing & layout -------------------------------------------------- */
+  --gap: 16px;
   --gutter: clamp(1.25rem, 4vw, 3rem);
+  --section-pad: clamp(4rem, 12vh, 8rem);
+  --section-pad-l: clamp(8rem, 18vh, 16rem);
+  --band-gap: clamp(7rem, 19vh, 15rem);
+  --work-indent: 6vw;
+  --work-copy: 840px;
+  --spv: 1.19;
+  --header-h: 5rem;
 
-  /* Motion */
-  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
-  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
-  --dur-fast: 0.18s;
-  --dur-base: 0.4s;
-  --dur-slow: 0.9s;
+  --radius-frame: 28px;
+  --radius-pill: 999px;
 
-  /* Breakpoints (referenced in comments; used via media queries directly) */
-  --bp-sm: 480px;
-  --bp-md: 768px;
-  --bp-lg: 1080px;
-  --bp-xl: 1400px;
+  /* ---- Motion ------------------------------------------------------------ */
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out-hard: cubic-bezier(0.65, 0, 0, 1);
+  --ease-in-out-sine: cubic-bezier(0.45, 0, 0.55, 1);
+  --ease-snap: cubic-bezier(0.625, 0.05, 0, 1);
+  --dur-micro: 0.3s;
+  --dur-base: 0.45s;
+  --dur-macro: 1s;
 
-  --radius-sm: 6px;
-  --radius-md: 14px;
-  --z-nav: 100;
-  --z-overlay: 200;
+  /* ---- 3D / bend knobs (read by shaders from Stage 6; tuned per breakpoint) */
+  --bend-depth: 260;
+  --bend-round: 420;
+  --bend-flat: 0.34;
+  --bend-dir: 1;
+  --fold-zone: 340;
+  --fold-angle: 64;
+  --fold-round: 300;
+  --fold-persp: 1100px;
+  --fold-fade-in: 380;
+  --fold-fade-out: 1000;
+  --warp-angle: 78;
+  --warp-persp: 420;
+  --warp-rise: 3;
+  --warp-ease: 1.7;
+  --warp-vary: 0.09;
+}
+
+/* Tablet */
+@media (max-width: 991px) {
+  :root {
+    --size-container-ideal: 834;
+    --size-container-min: 768px;
+    --size-container-max: 991px;
+    --display-size: min(104px, 16vw);
+    --header-h: 4.5rem;
+  }
+}
+
+/* Mobile landscape */
+@media (max-width: 767px) {
+  :root {
+    --size-container-ideal: 550;
+    --size-container-min: 480px;
+    --size-container-max: 767px;
+    --display-size: 19vw;
+    --spv: 1.5;
+    --bend-depth: 0;
+    --fold-angle: 36;
+    --warp-rise: 1.2;
+  }
+}
+
+/* Mobile portrait */
+@media (max-width: 479px) {
+  :root {
+    --size-container-ideal: 390;
+    --size-container-min: 320px;
+    --size-container-max: 479px;
+    --fold-angle: 0;
+    --header-h: 4rem;
+  }
 }

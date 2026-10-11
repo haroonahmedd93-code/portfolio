@@ -1,0 +1,86 @@
+/* ==========================================================================
+   #intro — lede line, display title, script location, project wall behind
+   Stage 1: static CSS-grid wall. Stage 3 replaces it with the Three.js wall.
+   ========================================================================== */
+
+.section--lede {
+  min-height: 100svh;
+  display: grid;
+  place-items: center;
+  padding-top: calc(var(--header-h) + var(--section-pad));
+  overflow: hidden;
+  isolation: isolate;
+}
+
+/* ---- Wall ---------------------------------------------------------------- */
+.wall {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  display: grid;
+  place-items: center;
+  perspective: 1400px;
+  overflow: hidden;
+}
+.wall__grid {
+  --cols: 4;
+  --tile-w: clamp(220px, 24vw, 380px);
+  display: grid;
+  grid-template-columns: repeat(var(--cols), var(--tile-w));
+  gap: var(--gap);
+  width: max-content;
+  transform: translateZ(-420px) rotateX(8deg) scale(1.12);
+  transform-style: preserve-3d;
+  opacity: 0.55;
+}
+.wall__tile {
+  aspect-ratio: 4 / 3;
+  border-radius: 14px;
+  overflow: hidden;
+  background: #111;
+}
+.wall__tile img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.wall__vignette {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 60% 55% at 50% 50%, rgba(0, 0, 0, 0.25) 0%, rgba(0, 0, 0, 0.78) 60%, #000 100%),
+    linear-gradient(to bottom, rgba(0, 0, 0, 0.6), transparent 25%, transparent 70%, #000);
+}
+
+/* ---- Lede ---------------------------------------------------------------- */
+.lede {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  text-align: center;
+  gap: 1.25rem;
+}
+.lede__line {
+  font-size: var(--fs-lead);
+  color: var(--c-fg-soft);
+}
+.lede__title {
+  position: relative;
+}
+.lede__script {
+  position: relative;
+  margin-top: calc(var(--fs-display-xl) * -0.38); /* overlaps the bottom display line by ~0.35em of the display size */
+  transform: rotate(-4deg);
+  z-index: 1;
+}
+
+@media (max-width: 767px) {
+  .wall__grid {
+    --cols: 3;
+    --tile-w: 44vw;
+    transform: translateZ(-300px) scale(1.15);
+  }
+  .lede {
+    gap: 1rem;
+  }
+}

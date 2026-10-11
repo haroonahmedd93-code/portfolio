@@ -1,0 +1,116 @@
+/* ==========================================================================
+   Featured title + #work list with carousels
+   Stage 1: native scroll-snap carousels; Stage 5 adds inertia drag, dots, bend.
+   ========================================================================== */
+
+.section--featured {
+  padding-block: var(--section-pad-l) var(--section-pad);
+  text-align: center;
+}
+.featured__title {
+  font-size: var(--fs-display-xl);
+}
+
+.section--work {
+  padding-inline: 0;
+  padding-block: 0 var(--section-pad);
+  display: grid;
+  gap: var(--section-pad-l);
+}
+
+.work__item {
+  display: grid;
+  gap: 2.5rem;
+}
+.work__head {
+  display: grid;
+  gap: 1.25rem;
+  justify-items: start;
+  padding-inline: var(--work-indent);
+  max-width: calc(var(--work-copy) + 2 * var(--work-indent));
+}
+.work__meta {
+  display: flex;
+  align-items: center;
+  gap: 0.9em;
+}
+.work__meta time {
+  color: var(--c-fg);
+}
+.work__company::before {
+  content: '·';
+  margin-right: 0.9em;
+}
+.work__title {
+  font-size: var(--fs-display-xl);
+}
+.work__pitch {
+  max-width: var(--work-copy);
+}
+
+/* ---- Carousel ------------------------------------------------------------ */
+.carousel {
+  position: relative;
+  display: grid;
+  gap: 1.25rem;
+}
+.carousel__track {
+  --slide-w: calc((100vw - 2 * var(--work-indent)) / var(--spv));
+  display: flex;
+  gap: var(--gap);
+  padding-inline: var(--work-indent);
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scroll-padding-inline: var(--work-indent);
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+}
+.carousel__track::-webkit-scrollbar {
+  display: none;
+}
+.carousel__slide {
+  flex: 0 0 var(--slide-w);
+  scroll-snap-align: start;
+  display: flex;
+  align-items: stretch;
+}
+.carousel__slide .frame {
+  width: 100%;
+  height: calc(var(--slide-w) * 10 / 16);
+}
+.carousel__slide .frame--phone {
+  width: auto;
+  aspect-ratio: 390 / 844;
+  margin-inline: auto;
+}
+.carousel__dots {
+  display: flex;
+  justify-content: center;
+  gap: 0.6rem;
+}
+.carousel__dot {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  background: var(--c-fg-mute);
+  transition: background-color var(--dur-micro) ease-out, transform var(--dur-micro) var(--ease-snap);
+}
+.carousel__dot.is-active {
+  background: var(--c-fg);
+  transform: scale(1.3);
+}
+
+@media (max-width: 767px) {
+  .work__item {
+    gap: 1.75rem;
+  }
+  .work__head {
+    padding-inline: var(--gutter);
+  }
+  .carousel__track {
+    --slide-w: calc((100vw - 2 * var(--gutter)) / var(--spv));
+    padding-inline: var(--gutter);
+    scroll-padding-inline: var(--gutter);
+  }
+}
