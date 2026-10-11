@@ -3,7 +3,7 @@
  * slides, dots, keyboard, side slides bend away in perspective (page-bend),
  * frames fold at the viewport edge.
  */
-import { gsap, ScrollTrigger } from '../core/gsap';
+import { gsap } from '../core/gsap';
 import { Draggable } from 'gsap/Draggable';
 import { rm, coarsePointer } from '../core/rm';
 import { openLightbox } from './lightbox';
@@ -141,33 +141,5 @@ function initCarousel(root: HTMLElement) {
     goTo(current, false);
   });
 
-  // W8 — fold at the viewport edge (CSS 3D)
-  if (!rm.reduced) {
-    const angle = cssNum('--fold-angle', 64);
-    if (angle > 0) {
-      ScrollTrigger.create({
-        trigger: root,
-        start: 'top bottom',
-        end: 'bottom top',
-        scrub: true,
-        onUpdate(self) {
-          // p 0 → entering from the bottom, 1 → leaving at the top
-          const p = self.progress;
-          const zone = 0.22;
-          let rx = 0;
-          let origin = '50% 0%';
-          if (p < zone) {
-            rx = angle * (1 - p / zone); // bottom edge folds away as it enters
-            origin = '50% 0%';
-          } else if (p > 1 - zone) {
-            rx = -angle * ((p - (1 - zone)) / zone); // top edge folds as it leaves
-            origin = '50% 100%';
-          }
-          track.style.transformOrigin = origin;
-          track.style.transform = `translate3d(${x}px,0,0) perspective(${cssNum('--fold-persp', 1100)}px) rotateX(${rx}deg)`;
-          track.style.opacity = String(1 - Math.abs(rx) / angle * 0.5);
-        },
-      });
-    }
-  }
+  // W8 — the original's edge fold is replaced by the gradual blur at the base of the viewport (see gradual-blur.ts)
 }

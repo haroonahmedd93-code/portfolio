@@ -333,3 +333,20 @@ button {
     clip-path: inset(0);
   }
 }
+
+/* Gradual blur at the base of the viewport (works section) */
+.gradual-blur {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 40;
+  pointer-events: none;
+  opacity: 0;
+  isolation: isolate;
+}
+@supports not (backdrop-filter: blur(1px)) {
+  .gradual-blur > div {
+    background: rgba(0, 0, 0, 0.3);
+  }
+}

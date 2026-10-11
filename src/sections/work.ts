@@ -4,6 +4,7 @@
 import { highlight, riseIn } from '../core/reveal';
 import { initWarpTitles } from '../ui/warp-title';
 import { initCarousels } from '../ui/carousel';
+import { initGradualBlur } from '../ui/gradual-blur';
 
 export function initWork() {
   const work = document.querySelector<HTMLElement>('#work');
@@ -12,4 +13,5 @@ export function initWork() {
   for (const meta of work.querySelectorAll<HTMLElement>('[data-reveal-meta]')) riseIn(Array.from(meta.children) as Element[], { trigger: meta });
   for (const pitch of work.querySelectorAll<HTMLElement>('[data-highlight]')) highlight(pitch);
   initCarousels();
+  initGradualBlur(['#work']);
 }
