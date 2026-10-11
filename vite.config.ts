@@ -37,7 +37,8 @@ export default defineConfig({
       output: {
         manualChunks: {
           three: ['three'],
-          gsap: ['gsap', 'gsap/ScrollTrigger', 'gsap/InertiaPlugin'],
+          gsap: ['gsap', 'gsap/ScrollTrigger', 'gsap/InertiaPlugin', 'gsap/SplitText', 'gsap/Draggable'],
+          matter: ['matter-js'],
           lenis: ['lenis'],
         },
       },

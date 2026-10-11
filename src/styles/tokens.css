@@ -1,5 +1,5 @@
 /* ==========================================================================
-   Design tokens — see docs/01-design-tokens.md
+   Design tokens — measured from the original at 1707×1015 (16px root).
    UI chrome is strictly black and white. Colour lives only in media + scenes.
    ========================================================================== */
 
@@ -34,10 +34,16 @@
   --c-bg: #000000;
   --c-fg: #ffffff;
   --c-fg-soft: #fef9ee;
-  --c-fg-mute: rgba(255, 255, 255, 0.56); /* ≥ 4.5:1 on black, incl. --fs-micro */
+  --c-fg-warm: #f2efe8; /* manifesto */
+  --c-fg-86: rgba(255, 255, 255, 0.86); /* work blurb */
+  --c-fg-75: rgba(255, 255, 255, 0.75); /* case meta labels */
+  --c-fg-65: rgba(255, 255, 255, 0.65); /* band numbers */
+  --c-fg-mute: rgba(255, 255, 255, 0.56);
+  --c-fg-dim: rgba(255, 255, 255, 0.56); /* highlight-text start state — still ≥ 4.5:1 */
   --c-line: rgba(255, 255, 255, 0.7);
-  --c-line-soft: rgba(255, 255, 255, 0.18);
-  --c-pill: rgba(255, 255, 255, 0.08);
+  --c-line-soft: rgba(255, 255, 255, 0.35);
+  --c-ink: #0b0b0b; /* text on white pills */
+  --c-pill: rgba(28, 28, 30, 0.55);
 
   /* Scene accents — ONLY inside WebGL scenes and project frames */
   --c-violet: #7b3cff;
@@ -46,49 +52,47 @@
   --c-orange: #e8742e;
   --c-navy: #0a0b24;
 
-  /* ---- Fluid rem system -------------------------------------------------- */
-  --size-unit: 16;
-  --size-container-ideal: 1660;
-  --size-container-min: 992px;
-  --size-container-max: 1660px;
-  --size-container: clamp(var(--size-container-min), 100vw, var(--size-container-max));
-  --size-font: calc(var(--size-container) / (var(--size-container-ideal) / var(--size-unit)));
-
   /* ---- Type -------------------------------------------------------------- */
   --font-display: 'League Gothic', 'Arial Narrow', Impact, sans-serif;
-  --display-stroke: 0.026em; /* faux-black weight for League Gothic */
   --font-text: 'Instrument Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif;
   --font-script: 'Mrs Saint Delafield', 'Brush Script MT', cursive;
+  --display-stroke: 0.026em; /* faux-black weight for League Gothic */
 
-  --display-size: min(170px, 9.6vw, 16.5vh); /* hero title: ~61vw wide, ~12vh cap height at 1707×1015 */
-  --fs-display-xl: var(--display-size);
-  --fs-display-xxl: clamp(3.5rem, 11vw, 11rem);
-  --fs-display-l: clamp(2.75rem, 7vw, 5rem);
-  --fs-display-m: clamp(1.9rem, 5.2vw, 4.1rem);
-  --fs-lead: clamp(1.25rem, 2.6vw, 2.25rem);
-  --fs-body: clamp(1.0625rem, 1.96vw, 1.75rem);
-  --fs-ui: clamp(0.95rem, 1.3vw, 1.25rem);
-  --fs-micro: clamp(11px, 1.2vw, 16px);
-  --fs-script: clamp(2.4rem, 6.4vw, 5.25rem);
-
-  --lh-display: 0.85;
-  --lh-body: 1.25;
-  --ls-display: -0.01em;
-
-  --copy-measure: calc(24 * var(--fs-body));
+  /* Measured sizes (desktop) with fluid fallbacks for smaller viewports */
+  --fs-hero: min(165px, 9.7vw, 16.5svh); /* their 180px Arges ≈ 1039px wide; League Gothic hits that width at ~151–165px */
+  --fs-eyebrow: 18px;
+  --fs-script-hero: min(46px, 4.4vw);
+  --fs-manifesto: clamp(34px, 3.85vw, 65.6px);
+  --fs-display-120: clamp(44px, 7.03vw, 120px); /* pillar / featured / about / outro titles */
+  --fs-work-name: clamp(44px, 4.7vw, 80px);
+  --fs-work-blurb: clamp(18px, 1.4vw, 24px);
+  --fs-note: clamp(17px, 1.23vw, 21px); /* approach notes */
+  --fs-about: clamp(19px, 1.64vw, 28px);
+  --fs-social: clamp(24px, 2.35vw, 40px);
+  --fs-ui: 14px;
+  --fs-micro: 12px;
+  --fs-case-title: clamp(44px, 4.7vw, 80px);
+  --fs-band-title: clamp(36px, 3.5vw, 60px);
+  --fs-lede-24: clamp(18px, 1.4vw, 24px);
+  --fs-feature-name: clamp(24px, 1.9vw, 32px);
+  --fs-body-18: clamp(16px, 1.05vw, 18px);
 
   /* ---- Spacing & layout -------------------------------------------------- */
-  --gap: 16px;
-  --gutter: clamp(1.25rem, 4vw, 3rem);
-  --section-pad: clamp(4rem, 12vh, 8rem);
-  --section-pad-l: clamp(8rem, 18vh, 16rem);
-  --band-gap: clamp(7rem, 19vh, 15rem);
-  --work-indent: 6vw;
-  --work-copy: 840px;
-  --spv: 1.19;
-  --header-h: 5rem;
+  --header-pad-y: 36px;
+  --header-pad-x: 44px;
+  --header-h: 114px;
+  --gutter: clamp(20px, 3.75vw, 64px);
+  --col-work: 840px;
+  --col-about: 864px;
+  --col-copy: 672px;
+  --col-outro: 1152px;
+  --col-case: 1200px;
+  --band-gap: 111.65px; /* 11vh at 1015 */
+  --spv: 1.62; /* 1707 / 1053 */
+  --slide-w: 61.7vw;
+  --slide-h: 33.3vw;
 
-  --radius-frame: 28px;
+  --radius-frame: 24px;
   --radius-pill: 999px;
 
   /* ---- Motion ------------------------------------------------------------ */
@@ -100,56 +104,53 @@
   --dur-base: 0.45s;
   --dur-macro: 1s;
 
-  /* ---- 3D / bend knobs (read by shaders from Stage 6; tuned per breakpoint) */
+  /* ---- 3D / bend knobs (read by JS; tuned per breakpoint) ----------------- */
   --bend-depth: 260;
   --bend-round: 420;
   --bend-flat: 0.34;
-  --bend-dir: 1;
   --fold-zone: 340;
   --fold-angle: 64;
-  --fold-round: 300;
   --fold-persp: 1100px;
-  --fold-fade-in: 380;
-  --fold-fade-out: 1000;
   --warp-angle: 78;
   --warp-persp: 420;
   --warp-rise: 3;
-  --warp-ease: 1.7;
-  --warp-vary: 0.09;
 }
 
 /* Tablet */
 @media (max-width: 991px) {
   :root {
-    --size-container-ideal: 834;
-    --size-container-min: 768px;
-    --size-container-max: 991px;
-    --display-size: min(104px, 11vw);
-    --header-h: 4.5rem;
+    --header-pad-y: 24px;
+    --header-pad-x: 28px;
+    --header-h: 84px;
+    --slide-w: 72vw;
+    --slide-h: 39vw;
+    --band-gap: 80px;
   }
 }
 
 /* Mobile landscape */
 @media (max-width: 767px) {
   :root {
-    --size-container-ideal: 550;
-    --size-container-min: 480px;
-    --size-container-max: 767px;
-    --display-size: 19vw;
-    --spv: 1.5;
+    --fs-hero: 19vw;
+    --fs-eyebrow: 15px;
+    --fs-script-hero: 8.5vw;
+    --fs-display-120: 15vw;
+    --header-pad-y: 20px;
+    --header-pad-x: 20px;
+    --header-h: 72px;
+    --slide-w: 80vw;
+    --slide-h: 52vw;
     --bend-depth: 0;
     --fold-angle: 36;
     --warp-rise: 1.2;
+    --band-gap: 64px;
   }
 }
 
 /* Mobile portrait */
 @media (max-width: 479px) {
   :root {
-    --size-container-ideal: 390;
-    --size-container-min: 320px;
-    --size-container-max: 479px;
     --fold-angle: 0;
-    --header-h: 4rem;
+    --header-h: 64px;
   }
 }

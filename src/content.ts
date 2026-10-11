@@ -32,6 +32,9 @@ export interface Frame {
   alt: string;
   /** 'phone' | 'desktop' | 'tablet' — drives the device frame aspect */
   kind: 'phone' | 'desktop' | 'tablet';
+  /** Case-page feature caption (name + one-line tagline) */
+  name?: string;
+  tagline?: string;
 }
 
 export interface CaseChapter {
@@ -183,10 +186,10 @@ export const projects: Project[] = [
           title: 'One system, every surface',
           paragraphs: ['PLACEHOLDER — The design system, the simulator-driven handoff, and the new page templates.'],
           features: [
-            { src: ph('bayut-01'), alt: 'Homepage — placeholder', kind: 'desktop' },
-            { src: ph('bayut-02'), alt: 'Search results — placeholder', kind: 'desktop' },
-            { src: ph('bayut-03'), alt: 'Listing detail — placeholder', kind: 'desktop' },
-            { src: ph('bayut-04'), alt: 'Mobile listing — placeholder', kind: 'phone' },
+            { src: ph('bayut-01'), alt: 'Homepage — placeholder', kind: 'desktop', name: 'Homepage', tagline: 'PLACEHOLDER — One line on what the new home does for a first-time visitor.' },
+            { src: ph('bayut-02'), alt: 'Search results — placeholder', kind: 'desktop', name: 'Search results', tagline: 'PLACEHOLDER — Filters, map and list rebuilt on one responsive grid.' },
+            { src: ph('bayut-03'), alt: 'Listing detail — placeholder', kind: 'desktop', name: 'Listing detail', tagline: 'PLACEHOLDER — Gallery, facts and contact in a single scroll.' },
+            { src: ph('bayut-04'), alt: 'Mobile listing — placeholder', kind: 'phone', name: 'Mobile listing', tagline: 'PLACEHOLDER — The same system at 390px.' },
           ],
         },
         {
@@ -375,7 +378,8 @@ export const heroTiles: { src: string; alt: string; href: string }[] = [
 }));
 
 export const about = {
-  title: ['ABOUT', 'ME'],
+  // 3 lines at 864px wide, like the original's statement title
+  title: ['MAKING COMPLEX', 'PRODUCTS FEEL', 'SIMPLE'],
   portrait: { src: ph('portrait'), alt: 'Portrait of Haroon Ahmed Butt — placeholder' },
   paragraphs: [
     'I’m Haroon, a Senior Product Designer in Dubai. I design the complicated things — property and auto marketplaces, fintech card controls, fraud and risk tooling — and make them feel simple.',
@@ -386,8 +390,11 @@ export const about = {
 };
 
 export const outro = {
-  // PLACEHOLDER per plan
-  title: ['LET’S BUILD', 'THE NEXT BIG THING'],
+  // Two columns: a title line with a link under each (PLACEHOLDER copy per plan)
+  columns: [
+    { title: 'LET’S BUILD', link: { label: 'LinkedIn', href: site.linkedin, external: true } },
+    { title: 'THE NEXT BIG THING', link: { label: site.email, href: `mailto:${site.email}`, copy: true } },
+  ],
 };
 
 export const nav = [

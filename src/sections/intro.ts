@@ -4,6 +4,7 @@
  */
 import { gsap, ScrollTrigger } from '../core/gsap';
 import { rm } from '../core/rm';
+import { revealChars, revealWords } from '../core/reveal';
 import type { HeroWall } from '../gl/hero-wall';
 
 export async function initIntro() {
@@ -49,8 +50,8 @@ export async function initIntro() {
     tl.from([line, title, script], { opacity: 0, duration: 0.6, stagger: 0.1 });
   } else {
     gsap.set(lede, { opacity: 1 });
-    tl.from(line, { yPercent: 100, opacity: 0, duration: 0.9 }, 0) // H1
-      .from(title, { yPercent: 110, duration: 1.0 }, 0.15) // H2 (masked by .lede__title overflow)
+    tl.add(revealWords(line, { immediate: true }), 0) // H1 — words rise from a mask, .9s expo.out, .055
+      .add(revealChars(title, { immediate: true, stagger: 0.03 }), 0.15) // H2 — chars rise, 1s expo.out, .03
       .fromTo(script, { clipPath: 'inset(-20% 100% -20% 0)' }, { clipPath: 'inset(-20% 0% -20% 0)', duration: 1.2, ease: 'power2.inOut' }, 0.45); // H3
   }
 

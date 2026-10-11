@@ -1,39 +1,131 @@
 /* ==========================================================================
-   Manifesto + #approach (four pillars)
-   Stage 1: four stacked, static sections = the reduced-motion layout.
-   Stage 4 pins the stage and crossfades scenes.
+   Manifesto + #approach
+   Measured: manifesto section padding 264 / 40, 65.6px/1.06, −0.03em, 732 max,
+   #f2efe8. Approach: ~1000vh pinned stage, 120px title at 30% of the viewport,
+   21px/1.35 note (≤ 520px) at 66%.
    ========================================================================== */
 
 .section--manifesto {
-  padding-block: var(--section-pad-l);
+  padding: clamp(120px, 26vh, 264px) var(--gutter) 40px;
   display: grid;
   place-items: center;
   text-align: center;
 }
 .manifesto {
-  max-width: 30ch;
+  font-size: var(--fs-manifesto);
+  line-height: 1.06;
+  letter-spacing: -0.03em;
+  color: var(--c-fg-warm);
+  max-width: 732px;
+  text-wrap: balance;
 }
 .manifesto .line {
   display: block;
 }
 
+/* ---- Pinned stage ---------------------------------------------------------- */
 .section--focus {
-  padding-block: 0;
+  padding: 0;
+  height: 800svh;
 }
 .approach__stage {
-  display: grid;
+  position: sticky;
+  top: 0;
+  height: 100svh;
+  overflow: hidden;
+  isolation: isolate;
+}
+.approach__scenes {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+}
+.scene {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  will-change: opacity;
+}
+.scene canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.scene.is-active {
+  opacity: 1;
 }
 
+.approach__titles,
+.approach__notes {
+  position: absolute;
+  left: var(--gutter);
+  right: var(--gutter);
+  z-index: 1;
+  display: grid;
+  justify-items: center;
+  text-align: center;
+  pointer-events: none;
+}
+.approach__titles {
+  top: 30svh;
+}
+.approach__notes {
+  top: 66svh;
+}
+.approach__title,
+.approach__note {
+  grid-area: 1 / 1; /* stacked in one slot; JS crossfades them */
+  opacity: 0;
+}
+.approach__title {
+  font-size: var(--fs-display-120);
+  line-height: 1;
+  will-change: transform, opacity, filter;
+}
+.approach__note {
+  font-size: var(--fs-note);
+  line-height: 1.35;
+  max-width: 520px;
+  color: var(--c-fg);
+  will-change: transform, opacity;
+}
+.approach__index {
+  position: absolute;
+  left: var(--gutter);
+  bottom: 32px;
+  z-index: 1;
+  font-size: var(--fs-micro);
+  letter-spacing: 0.14em;
+  color: var(--c-fg-65);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---- Static fallback (reduced motion / no JS): four stacked pillars --------- */
+.approach__static {
+  display: none;
+}
+.is-static .approach__stage,
+.no-js .approach__stage {
+  display: none;
+}
+.is-static .approach__static,
+.no-js .approach__static {
+  display: grid;
+}
+.section--focus.is-static,
+.no-js .section--focus {
+  height: auto;
+}
 .pillar {
   min-height: 100svh;
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  grid-template-rows: 1fr auto;
   align-content: center;
   justify-items: center;
   text-align: center;
-  gap: 2rem;
-  padding-block: var(--section-pad);
+  gap: 24px;
+  padding: 64px var(--gutter);
 }
 .pillar__scene {
   width: min(100%, 56rem);
@@ -50,22 +142,23 @@
   text-transform: uppercase;
   color: var(--c-fg-mute);
 }
-.pillar__copy {
-  display: grid;
-  justify-items: center;
-  gap: 1rem;
-  max-width: 44rem;
+.pillar__title {
+  font-size: var(--fs-display-120);
 }
 .pillar__body {
-  max-width: 34ch;
+  font-size: var(--fs-note);
+  line-height: 1.35;
+  max-width: 520px;
 }
 
 @media (max-width: 767px) {
-  .pillar {
-    min-height: 80svh;
-    gap: 1.5rem;
+  .approach__titles {
+    top: 26svh;
   }
-  .pillar__scene {
-    aspect-ratio: 4 / 3;
+  .approach__notes {
+    top: 64svh;
+  }
+  .section--focus {
+    height: 500svh;
   }
 }

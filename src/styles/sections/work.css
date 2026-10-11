@@ -1,116 +1,166 @@
 /* ==========================================================================
    Featured title + #work list with carousels
-   Stage 1: native scroll-snap carousels; Stage 5 adds inertia drag, dots, bend.
+   Measured: featured padding-top 193, stage 414 (title at +156) · work
+   padding 30 / 183 · centred 840px head · meta 12px/600 gap 12 mb 20 ·
+   name 80px/76 (weight 400) mb 16 · blurb 24/34.8 @ .86 · links mt 28 ·
+   head mb 26 · slides 1053×569 r24, inactive .3 · dots row 44 · items gap 106
    ========================================================================== */
 
 .section--featured {
-  padding-block: var(--section-pad-l) var(--section-pad);
+  padding: clamp(96px, 19vh, 193px) var(--gutter) 0;
   text-align: center;
 }
+.featured__stage {
+  height: clamp(220px, 40.8vh, 414px);
+  display: grid;
+  align-content: start;
+  padding-top: clamp(80px, 15.4vh, 156px);
+  perspective: 420px;
+}
 .featured__title {
-  font-size: var(--fs-display-xl);
+  font-size: var(--fs-display-120);
+  line-height: 1;
+  white-space: nowrap;
+  transform-origin: 50% 100%;
 }
 
 .section--work {
-  padding-inline: 0;
-  padding-block: 0 var(--section-pad);
+  padding: 30px 0 clamp(96px, 18vh, 183px);
   display: grid;
-  gap: var(--section-pad-l);
+  gap: 106px;
 }
 
 .work__item {
   display: grid;
-  gap: 2.5rem;
 }
 .work__head {
+  width: min(var(--col-work), calc(100% - 2 * var(--gutter)));
+  margin: 0 auto 26px;
   display: grid;
-  gap: 1.25rem;
   justify-items: start;
-  padding-inline: var(--work-indent);
-  max-width: calc(var(--work-copy) + 2 * var(--work-indent));
 }
 .work__meta {
   display: flex;
   align-items: center;
-  gap: 0.9em;
+  gap: 12px;
+  margin-bottom: 20px;
 }
-.work__meta time {
-  color: var(--c-fg);
-}
-.work__company::before {
-  content: '·';
-  margin-right: 0.9em;
+.work__company {
+  color: var(--c-fg-mute);
+  font-weight: 500;
 }
 .work__title {
-  font-size: var(--fs-display-xl);
+  font-size: var(--fs-work-name);
+  line-height: 0.95;
+  -webkit-text-stroke: 0; /* work names are the regular weight in the original */
+  margin-bottom: 16px;
+  perspective: 420px;
+}
+.work__title .line {
+  display: inline; /* single line names */
+}
+.work__title .line + .line::before {
+  content: ' ';
 }
 .work__pitch {
-  max-width: var(--work-copy);
+  font-size: var(--fs-work-blurb);
+  line-height: 1.45;
+  color: var(--c-fg-86);
+  max-width: var(--col-work);
+}
+.work__links {
+  margin-top: 28px;
+  display: flex;
+  gap: 12px 24px;
 }
 
-/* ---- Carousel ------------------------------------------------------------ */
+/* ---- Carousel: full-bleed, drag with inertia, snap, side slides at 30% ---- */
 .carousel {
   position: relative;
   display: grid;
-  gap: 1.25rem;
+  gap: 20px;
+  width: 100%;
+  overflow: hidden;
+  touch-action: pan-y;
 }
 .carousel__track {
-  --slide-w: calc((100vw - 2 * var(--work-indent)) / var(--spv));
   display: flex;
-  gap: var(--gap);
-  padding-inline: var(--work-indent);
+  gap: 16px;
+  padding-inline: calc((100vw - var(--slide-w)) / 2);
+  cursor: grab;
+  will-change: transform;
+  /* fallback before JS: native scroll-snap */
   overflow-x: auto;
   scroll-snap-type: x mandatory;
-  scroll-padding-inline: var(--work-indent);
+  scroll-padding-inline: calc((100vw - var(--slide-w)) / 2);
   scrollbar-width: none;
-  -webkit-overflow-scrolling: touch;
-  overscroll-behavior-x: contain;
+  perspective: 1200px;
 }
 .carousel__track::-webkit-scrollbar {
   display: none;
 }
+.js .carousel__track {
+  overflow: visible;
+  scroll-snap-type: none;
+}
+.carousel__track.is-dragging {
+  cursor: grabbing;
+}
 .carousel__slide {
   flex: 0 0 var(--slide-w);
-  scroll-snap-align: start;
+  scroll-snap-align: center;
   display: flex;
-  align-items: stretch;
+  align-items: center;
+  justify-content: center;
+  height: var(--slide-h);
+  opacity: 0.3;
+  transition: opacity 0.45s var(--ease-snap);
+  transform-style: preserve-3d;
+  will-change: transform, opacity;
+}
+.carousel__slide.is-active {
+  opacity: 1;
 }
 .carousel__slide .frame {
   width: 100%;
-  height: calc(var(--slide-w) * 10 / 16);
+  height: 100%;
 }
 .carousel__slide .frame--phone {
   width: auto;
-  aspect-ratio: 390 / 844;
-  margin-inline: auto;
+  height: 100%;
+}
+.carousel__slide img {
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-drag: none;
 }
 .carousel__dots {
   display: flex;
   justify-content: center;
-  gap: 0.6rem;
+  align-items: center;
+  gap: 8px;
+  height: 24px;
 }
 .carousel__dot {
-  width: 0.5rem;
-  height: 0.5rem;
+  width: 6px;
+  height: 6px;
   border-radius: 50%;
-  background: var(--c-fg-mute);
+  background: rgba(255, 255, 255, 0.35);
   transition: background-color var(--dur-micro) ease-out, transform var(--dur-micro) var(--ease-snap);
 }
 .carousel__dot.is-active {
   background: var(--c-fg);
-  transform: scale(1.3);
+  transform: scale(1.35);
 }
 
 @media (max-width: 767px) {
-  .work__item {
-    gap: 1.75rem;
+  .section--work {
+    gap: 72px;
   }
   .work__head {
-    padding-inline: var(--gutter);
+    margin-bottom: 20px;
   }
-  .carousel__track {
-    --slide-w: calc((100vw - 2 * var(--gutter)) / var(--spv));
-    padding-inline: var(--gutter);
-    scroll-padding-inline: var(--gutter);
+  .work__links {
+    margin-top: 20px;
   }
 }

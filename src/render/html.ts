@@ -15,6 +15,13 @@ const lines = (arr: string[], cls = '') =>
 
 const paras = (arr: string[], cls = 'copy') => arr.map((p) => `<p class="${cls}">${esc(p)}</p>`).join('\n');
 
+const frameSize = (k: Frame['kind']) => (k === 'phone' ? [390, 844] : k === 'tablet' ? [1024, 768] : [1053, 569]);
+
+function frame(f: Frame, extra = '', attrs = '', eager = false) {
+  const [w, h] = frameSize(f.kind);
+  return `<figure class="frame frame--${f.kind}${extra}"${attrs}><img src="${f.src}" alt="${esc(f.alt)}" width="${w}" height="${h}" loading="${eager ? 'eager' : 'lazy'}" decoding="async" /></figure>`;
+}
+
 /* ---------------------------------------------------------------- head */
 
 export function renderHead(opts: { title: string; description: string; path: string; image?: string }) {
@@ -24,6 +31,7 @@ export function renderHead(opts: { title: string; description: string; path: str
   <meta name="description" content="${esc(opts.description)}" />
   <meta name="theme-color" content="#000000" />
   <meta name="color-scheme" content="dark" />
+  <meta name="view-transition" content="same-origin" />
   <link rel="canonical" href="${url}" />
   <meta property="og:type" content="website" />
   <meta property="og:title" content="${esc(opts.title)}" />
@@ -39,11 +47,6 @@ export function renderHead(opts: { title: string; description: string; path: str
 
 /* -------------------------------------------------------------- header */
 
-const logo = `
-<svg class="logo" viewBox="0 0 48 48" width="48" height="48" aria-hidden="true" focusable="false">
-  <path class="logo__ink" d="M9 8c2.5 2 3 10 3 16s-.5 14-3 16M9 24h13M22 8c2.5 2 3 10 3 16s-.5 14-3 16M31 40c.8-6 3-14 6-20 1-2 2-4 1-6-1-1-3 0-4 2 2-1 4 0 5 2 1.5 3 1 8 2 12 .5 3 1 6 0 10" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/>
-</svg>`;
-
 export function renderHeader(mode: 'home' | 'case', current?: { index: string; label: string }) {
   const centre =
     mode === 'home'
@@ -52,23 +55,23 @@ export function renderHeader(mode: 'home' | 'case', current?: { index: string; l
         ${nav
           .map(
             (n, i) =>
-              `<li><a class="nav__link${i === 0 ? ' is-active' : ''}" href="#${n.id}"${i === 0 ? ' aria-current="location"' : ''}>${n.label}</a></li>`,
+              `<li><a class="nav__link${i === 0 ? ' is-active' : ''}" href="#${n.id}" data-nav="${n.id}"${i === 0 ? ' aria-current="location"' : ''}>${n.label}</a></li>`,
           )
           .join('')}
+        <span class="nav__thumb" data-nav-thumb aria-hidden="true"></span>
       </ul>
-      <span class="nav__thumb" aria-hidden="true"></span>
     </nav>`
-      : `<div class="chapter-pill" aria-live="polite" aria-atomic="true">
-      <span class="chapter-pill__num">${current?.index ?? '01'}</span>
-      <span class="chapter-pill__label">${esc(current?.label ?? '')}</span>
+      : `<div class="chapter-pill" data-chapter-pill aria-live="polite" aria-atomic="true">
+      <span class="chapter-pill__num" data-chapter-num>${current?.index ?? '01'}</span>
+      <span class="chapter-pill__label" data-chapter-label><span>${esc(current?.label ?? '')}</span></span>
     </div>`;
 
   return `
 <a class="skip-link" href="#work">Skip to work</a>
-<header class="header">
-  <a class="header__logo" href="/" aria-label="${esc(site.name)} — home">${logo}</a>
+<header class="header" data-header>
+  <a class="header__logo" href="/" aria-label="${esc(site.name)} — home"><span class="logo script" aria-hidden="true"><span class="logo__ink" data-logo-ink>${esc(site.shortName)}</span></span></a>
   ${centre}
-  <a class="header__email link" href="mailto:${site.email}">${site.email}</a>
+  <a class="header__email link" href="mailto:${site.email}" data-copy-email>${site.email}</a>
 </header>`;
 }
 
@@ -94,7 +97,7 @@ ${preload}
     </div>
     <div class="lede" data-lede>
       <p class="lede__line" data-lede-line>${esc(hero.lede)}</p>
-      <h1 id="intro-title" class="display display--xl lede__title" data-lede-title><span class="lede__title-inner">${esc(hero.title)}</span></h1>
+      <h1 id="intro-title" class="display lede__title" data-lede-title><span class="lede__title-inner">${esc(hero.title)}</span></h1>
       <p class="lede__script script" data-lede-script>${esc(hero.script)}</p>
     </div>
   </div>
@@ -104,67 +107,70 @@ ${preload}
 function renderManifesto() {
   return `
 <section class="section section--manifesto" aria-label="Manifesto">
-  <p class="manifesto lead">${lines(manifesto.lines)}</p>
+  <p class="manifesto" data-reveal-lines>${lines(manifesto.lines)}</p>
 </section>`;
 }
 
 function renderApproach() {
-  const items = pillars
+  const stage = `
+  <div class="approach__stage" data-approach-stage aria-hidden="true">
+    <div class="approach__scenes">
+      ${pillars.map((p) => `<div class="scene scene--${p.id}" data-scene="${p.id}"><canvas data-scene-canvas></canvas></div>`).join('')}
+    </div>
+    <div class="approach__titles">
+      ${pillars.map((p) => `<h3 class="display approach__title" data-pillar-title="${p.id}">${esc(p.title)}</h3>`).join('')}
+    </div>
+    <div class="approach__notes">
+      ${pillars.map((p) => `<p class="approach__note" data-pillar-note="${p.id}">${esc(p.body)}</p>`).join('')}
+    </div>
+    <span class="approach__index" data-approach-index>01</span>
+  </div>`;
+  const statics = pillars
     .map(
       (p) => `
     <article class="pillar pillar--${p.id}" id="pillar-${p.id}" aria-labelledby="pillar-${p.id}-title">
-      <div class="pillar__scene" role="img" aria-label="${esc(p.scene)}">
-        <span class="pillar__scene-label">${esc(p.scene)}</span>
-      </div>
-      <div class="pillar__copy">
-        <span class="micro pillar__index">${p.index}</span>
-        <h3 id="pillar-${p.id}-title" class="display display--l pillar__title">${esc(p.title)}</h3>
-        <p class="lead pillar__body">${esc(p.body)}</p>
-      </div>
+      <div class="pillar__scene" role="img" aria-label="${esc(p.scene)}"><span class="pillar__scene-label">${esc(p.scene)}</span></div>
+      <span class="micro pillar__index">${p.index}</span>
+      <h3 id="pillar-${p.id}-title" class="display pillar__title">${esc(p.title)}</h3>
+      <p class="pillar__body">${esc(p.body)}</p>
     </article>`,
     )
     .join('');
   return `
-<section id="approach" class="section section--focus" aria-labelledby="approach-title">
+<section id="approach" class="section section--focus" aria-labelledby="approach-title" data-approach>
   <h2 id="approach-title" class="visually-hidden">Approach</h2>
-  <div class="approach__stage">${items}</div>
+  ${stage}
+  <div class="approach__static">${statics}</div>
 </section>`;
 }
 
-function frame(f: Frame, w: number, h: number, extra = '') {
-  return `<figure class="frame frame--${f.kind}${extra}"><img src="${f.src}" alt="${esc(f.alt)}" width="${w}" height="${h}" loading="lazy" decoding="async" /></figure>`;
-}
-
-const frameSize = (k: Frame['kind']) => (k === 'phone' ? [390, 844] : k === 'tablet' ? [1024, 768] : [1600, 1000]);
-
 function renderWorkItem(p: Project, i: number) {
   const slides = p.frames
-    .map((f, j) => {
-      const [w, h] = frameSize(f.kind);
-      return `<li class="carousel__slide" data-index="${j}">${frame(f, w, h)}</li>`;
-    })
+    .map((f, j) => `<li class="carousel__slide${j === 0 ? ' is-active' : ''}" data-index="${j}">${frame(f, '', ` data-lightbox="${f.src}"`, true)}</li>`)
     .join('');
   const dots = p.frames
     .map(
       (_, j) =>
-        `<button class="carousel__dot${j === 0 ? ' is-active' : ''}" type="button" aria-label="Slide ${j + 1} of ${p.frames.length}"${j === 0 ? ' aria-current="true"' : ''}></button>`,
+        `<button class="carousel__dot${j === 0 ? ' is-active' : ''}" type="button" data-dot="${j}" aria-label="Slide ${j + 1} of ${p.frames.length}"${j === 0 ? ' aria-current="true"' : ''}></button>`,
     )
     .join('');
   return `
   <article class="work__item" id="work-${p.slug}" aria-labelledby="work-${p.slug}-title" style="--i:${i}">
-    <header class="work__head">
-      <p class="work__meta micro">
+    <div class="work__head">
+      <p class="work__meta micro" data-reveal-meta>
         ${p.tag ? `<span class="tag">${p.tag}</span>` : ''}
         <time datetime="${p.year}">${p.year}</time>
         <span class="work__company">${esc(p.company)}</span>
       </p>
-      <h3 id="work-${p.slug}-title" class="display display--l work__title">${lines(p.titleLines)}</h3>
-      <p class="work__pitch body">${esc(p.pitch)}</p>
-      <a class="btn" href="/cases/${p.slug}/"><span class="btn__label">View Case Study</span></a>
-    </header>
+      <h3 id="work-${p.slug}-title" class="display work__title" data-warp-title><a class="work__name-link" href="/cases/${p.slug}/">${lines(p.titleLines)}</a></h3>
+      <p class="work__pitch" data-highlight>${esc(p.pitch)}</p>
+      <div class="work__links">
+        <a class="btn" href="/cases/${p.slug}/" data-roll><span class="btn__label">View Case Study</span></a>
+      </div>
+    </div>
     <div class="carousel" data-carousel>
-      <ul class="carousel__track" aria-label="${esc(p.title)} screens">${slides}</ul>
-      <div class="carousel__dots" aria-hidden="true">${dots}</div>
+      <ul class="carousel__track" data-carousel-track aria-label="${esc(p.title)} screens">${slides}</ul>
+      <div class="carousel__dots" data-carousel-dots>${dots}</div>
     </div>
   </article>`;
 }
@@ -172,7 +178,9 @@ function renderWorkItem(p: Project, i: number) {
 function renderWork() {
   return `
 <section class="section section--featured" aria-labelledby="featured-title">
-  <h2 id="featured-title" class="display display--xl featured__title">${lines(['FEATURED', 'PROJECTS'])}</h2>
+  <div class="featured__stage">
+    <h2 id="featured-title" class="display featured__title" data-warp-title="big">FEATURED PROJECTS</h2>
+  </div>
 </section>
 <section id="work" class="section section--work" aria-label="Selected work">
   ${projects.map(renderWorkItem).join('')}
@@ -182,31 +190,39 @@ function renderWork() {
 function renderAbout() {
   return `
 <section id="about" class="section section--about" aria-labelledby="about-title">
-  <div class="about__media" aria-hidden="true">
+  <div class="about__media" aria-hidden="true" data-about-media>
     <img src="${about.portrait.src}" alt="" width="900" height="1200" loading="lazy" decoding="async" />
   </div>
   <div class="about__copy">
-    <h2 id="about-title" class="display display--xl about__title">${lines(about.title)}</h2>
-    ${paras(about.paragraphs, 'lead about__p')}
-    <p class="about__signature script"><span class="visually-hidden">Signed, </span>${esc(about.signature)}</p>
+    <h2 id="about-title" class="display display--120 about__title" data-reveal-outline>${lines(about.title)}</h2>
+    <div class="about__text" data-highlight>${paras(about.paragraphs, 'about__p')}</div>
+    <p class="about__signature script" data-signature><span class="visually-hidden">Signed, </span><span aria-hidden="true">${esc(about.signature)}</span></p>
   </div>
 </section>`;
 }
 
 export function renderOutro(opts: { next?: Project } = {}) {
+  const cols = outro.columns
+    .map(
+      (c) => `
+    <div class="outro__col">
+      <h2 class="display outro__title" data-reveal-chars>${esc(c.title)}</h2>
+      <a class="outro__link link link--roll" href="${c.link.href}"${'external' in c.link && c.link.external ? ' rel="me noopener" target="_blank"' : ''}${'copy' in c.link && c.link.copy ? ' data-copy-email' : ''} data-roll>${esc(c.link.label)}</a>
+    </div>`,
+    )
+    .join('');
   const next = opts.next
-    ? `<a class="outro__next btn" href="/cases/${opts.next.slug}/"><span class="btn__label">Next: ${esc(opts.next.title)}</span></a>`
+    ? `<p class="outro__next"><a class="btn" href="/cases/${opts.next.slug}/" data-roll><span class="btn__label">Next: ${esc(opts.next.title)}</span></a></p>`
     : '';
   return `
-<footer id="outro" class="section section--outro" aria-labelledby="outro-title">
-  <div class="outro__glow" aria-hidden="true"></div>
-  <h2 id="outro-title" class="display display--xl outro__title">${lines(outro.title)}</h2>
-  <ul class="outro__links" aria-label="Contact">
-    <li><a class="link link--roll" href="${site.linkedin}" rel="me noopener" target="_blank">LinkedIn</a></li>
-    <li><a class="link link--roll" href="mailto:${site.email}" data-copy-email>${site.email}</a></li>
-  </ul>
-  ${next}
-  <p class="outro__copyright micro">© ${site.year} ${esc(site.name)}</p>
+<footer id="outro" class="section section--outro" aria-labelledby="outro-title" data-outro>
+  <div class="outro__glow" aria-hidden="true" data-outro-glow></div>
+  <div class="outro__inner">
+    <h2 id="outro-title" class="visually-hidden">Contact</h2>
+    ${cols}
+    ${next}
+  </div>
+  <p class="outro__copyright">© ${site.year} ${esc(site.name)}</p>
 </footer>`;
 }
 
@@ -220,42 +236,46 @@ ${renderHeader('home')}
   ${renderWork()}
   ${renderAbout()}
 </main>
-${renderOutro()}`;
+${renderOutro()}
+<div class="toast" role="status" aria-live="polite" data-toast></div>
+<div class="lightbox" data-lightbox-root aria-hidden="true" inert><img class="lightbox__img" alt="" data-lightbox-img /><button class="lightbox__close" type="button" data-lightbox-close>Close</button></div>`;
 }
 
 /* ---------------------------------------------------------------- case */
 
-function renderChapter(c: CaseChapter, i: number, total: number) {
+function renderChapter(c: CaseChapter, i: number) {
   const index = String(i + 1).padStart(2, '0');
-  const blocks = (c.blocks ?? [])
-    .map(
-      (b) => `
-      <div class="band__block">
-        <h3 class="band__subtitle">${esc(b.heading)}</h3>
-        ${paras(b.paragraphs)}
-      </div>`,
-    )
-    .join('');
-  const features = c.features?.length
-    ? `<ul class="band__features">${c.features
-        .map((f) => {
-          const [w, h] = frameSize(f.kind);
-          return `<li class="band__feature">${frame(f, w, h)}</li>`;
-        })
-        .join('')}</ul>`
+  const blocks = c.blocks?.length
+    ? `<div class="band__blocks">${c.blocks
+        .map((b) => `<div class="band__block"><h3 class="band__subtitle">${esc(b.heading)}</h3>${paras(b.paragraphs)}</div>`)
+        .join('')}</div>`
     : '';
   const metrics = c.metrics?.length
     ? `<dl class="metrics">${c.metrics
-        .map((m) => `<div class="metric"><dd class="metric__value display display--m">${esc(m.value)}</dd><dt class="metric__label micro">${esc(m.label)}</dt></div>`)
+        .map((m) => `<div class="metric"><dd class="metric__value display">${esc(m.value)}</dd><dt class="metric__label">${esc(m.label)}</dt></div>`)
         .join('')}</dl>`
     : '';
+  const features = c.features?.length
+    ? `<div class="band__features">${c.features
+        .map(
+          (f) => `
+        <div class="band__feature">
+          ${f.name ? `<h3 class="band__feature-name">${esc(f.name)}</h3>` : ''}
+          ${f.tagline ? `<p class="band__feature-tagline">${esc(f.tagline)}</p>` : ''}
+          ${frame(f, ' fold', ` data-fold data-lightbox="${f.src}"`)}
+        </div>`,
+        )
+        .join('')}</div>`
+    : '';
   return `
-  <section class="band band--${c.id}" id="${c.id}" data-chapter="${index}" data-chapter-label="${esc(c.label)}" aria-labelledby="${c.id}-title" style="--i:${i}" data-total="${total}">
-    <p class="band__label micro"><span>${index}</span> ${esc(c.label)}</p>
-    <h2 id="${c.id}-title" class="display display--m band__title">${esc(c.title)}</h2>
-    <div class="band__copy">${paras(c.paragraphs)}${blocks}</div>
-    ${features}
-    ${metrics}
+  <section class="band band--${c.id}" id="${c.id}" data-chapter="${index}" data-chapter-label="${esc(c.label)}" aria-labelledby="${c.id}-title">
+    <div class="wrap band__inner">
+      <p class="band__label"><span>${index}</span></p>
+      <h2 id="${c.id}-title" class="display band__title" data-reveal-chars>${esc(c.title)}</h2>
+      <div class="band__copy" data-highlight>${paras(c.paragraphs)}${blocks}</div>
+      ${metrics}
+      ${features}
+    </div>
   </section>`;
 }
 
@@ -263,43 +283,39 @@ export function renderCase(p: Project) {
   const idx = projects.findIndex((x) => x.slug === p.slug);
   const next = projects[(idx + 1) % projects.length];
   const first = p.case.chapters[0];
-  const [hw, hh] = frameSize(p.case.hero.kind);
   return `
 ${renderHeader('case', { index: '01', label: first.label })}
 <main id="main" class="case">
   <section class="case-head" aria-labelledby="case-title">
-    <p class="micro case-head__meta-line"><time datetime="${p.year}">${p.year}</time> · ${esc(p.company)}</p>
-    <h1 id="case-title" class="display display--xl case-head__title">${lines(p.titleLines)}</h1>
-    <p class="case-head__intro lead">${esc(p.case.intro)}</p>
-    <dl class="case-head__meta">
-      <div><dt class="micro">My role</dt><dd>${esc(p.case.role)}</dd></div>
-      <div><dt class="micro">Timeline</dt><dd>${esc(p.case.timeline)}</dd></div>
-      <div><dt class="micro">Team</dt><dd>${esc(p.case.team)}</dd></div>
-    </dl>
-    <figure class="case-head__hero fold">
-      <img src="${p.case.hero.src}" alt="${esc(p.case.hero.alt)}" width="${hw}" height="${hh}" decoding="async" fetchpriority="high" />
-    </figure>
+    <div class="wrap">
+      <h1 id="case-title" class="display case-head__title" data-reveal-chars>${lines(p.titleLines)}</h1>
+      <div class="case-head__grid">
+        <p class="case-head__intro" data-reveal-words>${esc(p.case.intro)}</p>
+        <dl class="case-head__meta" data-reveal-rows>
+          <div><dt>My role</dt><dd>${esc(p.case.role)}</dd></div>
+          <div><dt>Timeline</dt><dd>${esc(p.case.timeline)}</dd></div>
+          <div><dt>Team</dt><dd>${esc(p.case.team)}</dd></div>
+        </dl>
+      </div>
+    </div>
   </section>
+  <figure class="case-head__hero" data-fold="hero">
+    <img src="${p.case.hero.src}" alt="${esc(p.case.hero.alt)}" width="1707" height="914" decoding="async" fetchpriority="high" />
+  </figure>
   <div class="bands" id="work">
-    ${p.case.chapters.map((c, i) => renderChapter(c, i, p.case.chapters.length)).join('')}
-    ${p.case.link ? `<p class="case__visit"><a class="btn" href="${p.case.link.href}" rel="noopener" target="_blank"><span class="btn__label">${esc(p.case.link.label)} ↗</span></a></p>` : ''}
+    ${p.case.chapters.map(renderChapter).join('')}
+    ${p.case.link ? `<div class="wrap"><p class="case__visit"><a class="btn" href="${p.case.link.href}" rel="noopener" target="_blank" data-roll><span class="btn__label">${esc(p.case.link.label)} ↗</span></a></p></div>` : ''}
   </div>
 </main>
-${renderOutro({ next })}`;
+${renderOutro({ next })}
+<div class="toast" role="status" aria-live="polite" data-toast></div>
+<div class="lightbox" data-lightbox-root aria-hidden="true" inert><img class="lightbox__img" alt="" data-lightbox-img /><button class="lightbox__close" type="button" data-lightbox-close>Close</button></div>`;
 }
 
 export function caseMeta(p: Project) {
-  return {
-    title: `${p.title} — ${site.name}`,
-    description: p.pitch,
-    path: `/cases/${p.slug}/`,
-  };
+  return { title: `${p.title} — ${site.name}`, description: p.pitch, path: `/cases/${p.slug}/` };
 }
 
 export function homeMeta() {
-  return {
-    title: `${site.name} — ${site.role}, ${site.location}`,
-    description: site.description,
-    path: '/',
-  };
+  return { title: `${site.name} — ${site.role}, ${site.location}`, description: site.description, path: '/' };
 }
