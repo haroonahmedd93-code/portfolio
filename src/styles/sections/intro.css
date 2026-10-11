@@ -18,6 +18,7 @@
   background: var(--c-bg);
 }
 .no-js .section--lede,
+.section--lede.is-static,
 .section--lede .lede-stage.is-static {
   height: 100svh;
 }

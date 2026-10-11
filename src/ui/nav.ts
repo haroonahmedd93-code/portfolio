@@ -11,7 +11,7 @@ export function initNav() {
   if (!header) return;
 
   // N1 — header items rise in
-  riseIn(Array.from(header.children) as Element[], { immediate: true, delay: 0.2 });
+  if (!rm.reduced) riseIn(Array.from(header.children) as Element[], { immediate: true, delay: 0.2 });
 
   const links = Array.from(document.querySelectorAll<HTMLAnchorElement>('[data-nav]'));
   const thumb = document.querySelector<HTMLElement>('[data-nav-thumb]');

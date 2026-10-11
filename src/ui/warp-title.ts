@@ -15,10 +15,7 @@ export function initWarpTitles() {
   const els = Array.from(document.querySelectorAll<HTMLElement>('[data-warp-title]'));
   for (const el of els) {
     const big = el.dataset.warpTitle === 'big';
-    if (rm.reduced) {
-      gsap.from(el, { opacity: 0, duration: 0.6, scrollTrigger: { trigger: el, start: 'top 85%', once: true } });
-      continue;
-    }
+    if (rm.reduced) continue;
     const angle = cssNum('--warp-angle', 78);
     const rise = cssNum('--warp-rise', 3) * (big ? 1 : 0.4);
     const persp = cssNum('--warp-persp', 420);

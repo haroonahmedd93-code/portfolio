@@ -14,7 +14,7 @@ const aria = (el: Element) => (/^H[1-6]$/.test(el.tagName) ? 'auto' : 'none') as
 
 /** Lines rise out of a mask (M1): .9s expo.out, .08 stagger. */
 export function revealLines(el: Element, opts: { stagger?: number; start?: string; delay?: number } = {}) {
-  if (rm.reduced) return gsap.from(el, { opacity: 0, duration: 0.6, scrollTrigger: { trigger: el, start: opts.start ?? START, once: true } });
+  if (rm.reduced) return;
   const split = SplitText.create(el, { type: 'lines', linesClass: 'sl', mask: 'lines', aria: aria(el) });
   return gsap.from(split.lines, {
     yPercent: 100,
@@ -29,9 +29,7 @@ export function revealLines(el: Element, opts: { stagger?: number; start?: strin
 
 /** Chars rise out of a mask (H2/O1/C1): 1s expo.out, .02–.03 stagger. */
 export function revealChars(el: Element, opts: { stagger?: number; start?: string; delay?: number; immediate?: boolean } = {}) {
-  if (rm.reduced) {
-    return gsap.from(el, { opacity: 0, duration: 0.6, ...(opts.immediate ? {} : { scrollTrigger: { trigger: el, start: opts.start ?? START, once: true } }) });
-  }
+  if (rm.reduced) return;
   const split = SplitText.create(el, { type: 'chars,words', charsClass: 'ch', mask: 'chars', aria: aria(el) });
   return gsap.from(split.chars, {
     yPercent: 110,
@@ -45,9 +43,7 @@ export function revealChars(el: Element, opts: { stagger?: number; start?: strin
 
 /** Words fade/rise (H1/C1): .9s expo.out, .055 stagger. */
 export function revealWords(el: Element, opts: { stagger?: number; start?: string; delay?: number; immediate?: boolean } = {}) {
-  if (rm.reduced) {
-    return gsap.from(el, { opacity: 0, duration: 0.6, ...(opts.immediate ? {} : { scrollTrigger: { trigger: el, start: opts.start ?? START, once: true } }) });
-  }
+  if (rm.reduced) return;
   const split = SplitText.create(el, { type: 'words', wordsClass: 'wd', mask: 'words', aria: aria(el) });
   return gsap.from(split.words, {
     yPercent: 100,
@@ -63,7 +59,7 @@ export function revealWords(el: Element, opts: { stagger?: number; start?: strin
 /** Simple rise for small groups (N1/W2): .6s power3.out, .06 stagger. */
 export function riseIn(targets: Element | Element[], opts: { start?: string; delay?: number; immediate?: boolean; trigger?: Element } = {}) {
   const list = Array.isArray(targets) ? targets : [targets];
-  if (rm.reduced) return gsap.from(list, { opacity: 0, duration: 0.5, stagger: 0.06, ...(opts.immediate ? {} : { scrollTrigger: { trigger: opts.trigger ?? list[0], start: opts.start ?? START, once: true } }) });
+  if (rm.reduced) return;
   return gsap.from(list, {
     y: 20,
     opacity: 0,
