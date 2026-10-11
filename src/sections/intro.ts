@@ -20,14 +20,21 @@ export async function initIntro() {
   const title = section.querySelector<HTMLElement>('[data-lede-title] > span')!;
   const script = section.querySelector<HTMLElement>('[data-lede-script]')!;
 
-  const tiles = Array.from(fallback.querySelectorAll<HTMLImageElement>('img'))
-    .map((img) => img.getAttribute('src')!)
-    .filter((src, i, arr) => arr.indexOf(src) === i);
+  const tileEls = Array.from(fallback.querySelectorAll<HTMLElement>('[data-href]'));
+  const hrefBySrc = new Map(tileEls.map((li) => [li.querySelector('img')!.getAttribute('src')!, li.dataset.href!]));
+  const tiles = [...hrefBySrc.keys()];
 
   let wall: HeroWall | null = null;
   if (!rm.reduced) {
     const { createHeroWall } = await import('../gl/hero-wall'); // three.js lives in its own chunk
-    wall = createHeroWall({ canvas, tiles });
+    wall = createHeroWall({
+      canvas,
+      tiles,
+      onTileClick(_i, src) {
+        const href = hrefBySrc.get(src);
+        if (href) window.location.assign(href);
+      },
+    });
   }
 
   if (wall) {
@@ -48,9 +55,9 @@ export async function initIntro() {
   }
 
   if (wall) {
-    document.fonts.ready.then(() => {
+    Promise.all([document.fonts.ready, wall.ready]).then(() => {
       wall!.start();
-      tl.add(wall!.reveal(), 0.55); // H4: wall arrives after the type has started
+      wall!.reveal(Math.max(0, 0.55 - tl.time())); // H4: wall arrives after the type has started
     });
   }
 

@@ -1,235 +1,313 @@
 /**
  * Hero wall — the "inverted dome" of project tiles.
  *
- * Tiles sit on the inside of a sphere (radius R) and face its centre. The camera
- * sits *behind* the centre, so the wall curves towards the viewer like a bowl:
- * side columns and top/bottom rows tilt inwards (the look in 00-overview / the
- * reference recording). Drag rotates the dome with inertia; scroll dollies the
- * camera into the front tile. See 03-webgl.md for the original's uniforms
- * (uCell, uR, uPersp, uCamZ, uZoom, uDrag, uReveal) — same ideas, own code.
+ * An endless grid of square tiles, drawn in one full-screen fragment pass and
+ * bent with a pincushion lens so the whole surface (tiles and gutters) reads
+ * as the inside of a dome. Drag in any direction forever, with a friction
+ * glide; scroll dollies (zooms) into the tile nearest the centre; click a tile
+ * to open its case study.
+ *
+ * Technique after dipayanmaji/inverted-dome (lens grid + hashed cells),
+ * re-implemented on three.js so it shares the renderer with later scenes.
  */
 import {
   BufferAttribute,
   BufferGeometry,
+  CanvasTexture,
+  GLSL3,
+  LinearFilter,
   Mesh,
-  Object3D,
-  PerspectiveCamera,
+  NoColorSpace,
+  OrthographicCamera,
+  RawShaderMaterial,
   Scene,
-  ShaderMaterial,
-  SRGBColorSpace,
-  Texture,
-  TextureLoader,
   WebGLRenderer,
-  Group,
-  MathUtils,
-  Vector3,
+  ClampToEdgeWrapping,
 } from 'three';
-import { gsap, InertiaPlugin } from '../../core/gsap';
+import { gsap } from '../../core/gsap';
 import { coarsePointer } from '../../core/rm';
 import { fragmentShader, vertexShader } from './tile.glsl';
 
 export interface HeroWallOptions {
   canvas: HTMLCanvasElement;
-  tiles: string[]; // image urls, reused around the ring
-  cols?: number; // tiles around the full ring
-  rows?: number;
+  /** Unique tile images, ordered group-interleaved (index % groups = project). */
+  tiles: string[];
+  /** Number of projects the tiles cycle through (default 4). */
+  groups?: number;
+  /** Called with the tile's image index when a tile is clicked (not dragged). */
+  onTileClick?: (index: number, src: string) => void;
   onReady?: () => void;
 }
 
 export interface HeroWall {
-  /** Reveal tiles from the centre out (H4). Returns the timeline. */
-  reveal(): gsap.core.Timeline;
-  /** 0 → 1 scroll progress: camera dolly into the front tile (H5). */
+  /** Resolves once the atlas is on the GPU. */
+  ready: Promise<void>;
+  /** Centre-out reveal (H4), after an optional delay in seconds. */
+  reveal(delay?: number): gsap.core.Tween;
+  /** 0 → 1 scroll progress: dolly into the nearest tile, then dim (H5/H7). */
   setProgress(p: number): void;
   start(): void;
   stop(): void;
   destroy(): void;
 }
 
-const R = 10;
-const CAM_Z_START = 2.6; // behind the sphere centre → bowl look
-const CAM_Z_END = -R + 0.9; // right in front of the front tile
-const H_FOV = 72; // horizontal field of view in degrees (desktop) → 4 columns of 18°
-const MAX_PITCH = MathUtils.degToRad(13);
+/* ---- tuning (CSS px, as fractions of the viewport width) ------------------ */
+const TILE_VW = 0.192; // 327px at 1707 — measured from the reference
+const GAP_VW = 0.022;
+const TILE_VW_PORTRAIT = 0.4;
+const GAP_VW_PORTRAIT = 0.04;
+const RADIUS_PX = 16;
+const CURVE = 0.55; // lens strength
+const CURVE_RADIUS = 1.45; // lens reach
+const VIGNETTE = 0.3;
+const FRICTION = 0.92; // velocity kept per frame after release
+const DPR_MAX = 1.5; // full-screen fragment pass: fill-rate bound
+
+/** Same integer hash as the shader, so clicks resolve to the drawn image. */
+function hashCell(col: number, row: number, seed: number) {
+  let h = (Math.imul(col, 374761393) + Math.imul(row, 668265263) + Math.imul(seed, -2048144777)) | 0;
+  h = (h ^ (h >>> 13)) | 0;
+  h = Math.imul(h, 1274126177) | 0;
+  return (h ^ (h >>> 16)) >>> 0;
+}
+
+async function loadImage(src: string): Promise<HTMLImageElement | null> {
+  try {
+    const img = new Image();
+    img.decoding = 'async';
+    img.src = src;
+    await img.decode();
+    return img;
+  } catch {
+    return null;
+  }
+}
+
+/** Packs the unique tiles into a square-ish atlas canvas (cover-fit, clipped). */
+async function buildAtlas(urls: string[], cell = 768) {
+  const cols = Math.ceil(Math.sqrt(urls.length));
+  const rows = Math.ceil(urls.length / cols);
+  const canvas = document.createElement('canvas');
+  canvas.width = cols * cell;
+  canvas.height = rows * cell;
+  const ctx = canvas.getContext('2d')!;
+  ctx.fillStyle = '#0a0a0a';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  const images = await Promise.all(urls.map(loadImage));
+  images.forEach((img, i) => {
+    if (!img) return;
+    const x = (i % cols) * cell;
+    const y = Math.floor(i / cols) * cell;
+    const s = Math.max(cell / img.width, cell / img.height);
+    const w = img.width * s;
+    const h = img.height * s;
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(x, y, cell, cell);
+    ctx.clip();
+    ctx.drawImage(img, x + (cell - w) / 2, y + (cell - h) / 2, w, h);
+    ctx.restore();
+  });
+  return { canvas, cols, rows, count: urls.length };
+}
 
 export function createHeroWall(opts: HeroWallOptions): HeroWall | null {
   const { canvas, tiles } = opts;
-  const COLS = opts.cols ?? 20;
-  const ROWS = opts.rows ?? 7; // odd → the camera dollies into a tile, not a gap; 7 fills portrait screens
-  const COL_STEP = (Math.PI * 2) / COLS; // 18° at 20 cols → ~4.7 columns across at 86° hfov
-  const ROW_STEP = COL_STEP; // square cells
-  const TILE_ANGLE = COL_STEP * 0.89; // ~11% gap, as in the reference
-  const TILE = 2 * R * Math.sin(TILE_ANGLE / 2);
 
   let renderer: WebGLRenderer;
   try {
-    renderer = new WebGLRenderer({ canvas, antialias: true, alpha: true, powerPreference: 'high-performance' });
+    renderer = new WebGLRenderer({ canvas, antialias: false, alpha: true, powerPreference: 'high-performance' });
   } catch {
+    return null;
+  }
+  if (!renderer.capabilities.isWebGL2) {
+    renderer.dispose();
     return null;
   }
   renderer.setClearColor(0x000000, 0);
 
-  const scene = new Scene();
-  const camera = new PerspectiveCamera(50, 1, 0.1, 60);
-  camera.position.set(0, 0, CAM_Z_START);
-  const lookTarget = new Vector3(0, 0, -R);
-  camera.lookAt(lookTarget);
-
-  const dome = new Group();
-  scene.add(dome);
-
-  /* ---- textures --------------------------------------------------------- */
-  const loader = new TextureLoader();
-  const textures: Texture[] = tiles.map((url) => {
-    const t = loader.load(url, () => (t.needsUpdate = true));
-    t.colorSpace = SRGBColorSpace;
-    t.anisotropy = Math.min(4, renderer.capabilities.getMaxAnisotropy());
-    return t;
-  });
-
-  /* ---- tiles: one merged geometry, one draw call per texture ------------- */
-  const shared = {
-    uRevealT: { value: -1 },
-    uRadius: { value: 0.07 },
-    uDim: { value: 1 },
-  };
-  const materials = textures.map(
-    (t) =>
-      new ShaderMaterial({
-        vertexShader,
-        fragmentShader,
-        transparent: true,
-        depthWrite: false,
-        uniforms: { uMap: { value: t }, ...shared },
-      }),
-  );
-
-  const count = COLS * ROWS;
-  const centers = new Float32Array(count * 4 * 3);
-  const rights = new Float32Array(count * 4 * 3);
-  const ups = new Float32Array(count * 4 * 3);
-  const locals = new Float32Array(count * 4 * 2);
-  const delays = new Float32Array(count * 4);
-  const positions = new Float32Array(count * 4 * 3); // unused by the shader, keeps bounding sphere sane
-  const indices: number[] = [];
-  const order: { tex: number; tile: number }[] = [];
-
-  const helper = new Object3D();
-  const right = new Vector3();
-  const up = new Vector3();
-  let tile = 0;
-  for (let j = 0; j < ROWS; j++) {
-    const phi = (j - (ROWS - 1) / 2) * ROW_STEP;
-    for (let i = 0; i < COLS; i++, tile++) {
-      const theta = i * COL_STEP + ((j - (ROWS - 1) / 2) % 2 ? COL_STEP / 2 : 0); // brick offset; centre row stays on axis
-      helper.position.set(R * Math.cos(phi) * Math.sin(theta), R * Math.sin(phi), -R * Math.cos(phi) * Math.cos(theta));
-      helper.lookAt(0, 0, 0);
-      helper.updateMatrix();
-      right.set(TILE / 2, 0, 0).applyQuaternion(helper.quaternion);
-      up.set(0, TILE / 2, 0).applyQuaternion(helper.quaternion);
-      const dTheta = Math.atan2(Math.sin(theta), Math.cos(theta)); // wrap to [-π, π]
-      const dist = Math.hypot(dTheta / COL_STEP, phi / ROW_STEP);
-      const delay = Math.min(dist, 7) * 0.075;
-      for (let v = 0; v < 4; v++) {
-        const k = tile * 4 + v;
-        const lx = v % 2 ? 1 : -1;
-        const ly = v < 2 ? -1 : 1;
-        centers.set([helper.position.x, helper.position.y, helper.position.z], k * 3);
-        rights.set([right.x, right.y, right.z], k * 3);
-        ups.set([up.x, up.y, up.z], k * 3);
-        locals.set([lx, ly], k * 2);
-        delays[k] = delay;
-        positions.set(
-          [helper.position.x + right.x * lx + up.x * ly, helper.position.y + right.y * lx + up.y * ly, helper.position.z + right.z * lx + up.z * ly],
-          k * 3,
-        );
-      }
-      order.push({ tex: (i + j * 5) % textures.length, tile });
-    }
-  }
-  // group triangles by texture so each material draws once
-  order.sort((a, b) => a.tex - b.tex);
+  /* ---- full-screen triangle ---------------------------------------------- */
   const geometry = new BufferGeometry();
-  let cursor = 0;
-  for (let t = 0; t < textures.length; t++) {
-    const startIdx = cursor;
-    for (const o of order) {
-      if (o.tex !== t) continue;
-      const b = o.tile * 4;
-      indices.push(b, b + 1, b + 2, b + 1, b + 3, b + 2);
-      cursor += 6;
-    }
-    geometry.addGroup(startIdx, cursor - startIdx, t);
-  }
-  geometry.setIndex(indices);
-  geometry.setAttribute('position', new BufferAttribute(positions, 3));
-  geometry.setAttribute('aCenter', new BufferAttribute(centers, 3));
-  geometry.setAttribute('aRight', new BufferAttribute(rights, 3));
-  geometry.setAttribute('aUp', new BufferAttribute(ups, 3));
-  geometry.setAttribute('aLocal', new BufferAttribute(locals, 2));
-  geometry.setAttribute('aDelay', new BufferAttribute(delays, 1));
-  geometry.computeBoundingSphere();
-  const mesh = new Mesh(geometry, materials);
-  mesh.frustumCulled = false;
-  dome.add(mesh);
+  geometry.setAttribute('position', new BufferAttribute(new Float32Array([-1, -1, 0, 3, -1, 0, -1, 3, 0]), 3));
+  const atlasTex = new CanvasTexture(document.createElement('canvas'));
+  atlasTex.colorSpace = NoColorSpace; // sRGB bytes pass straight through to the screen
+  atlasTex.minFilter = LinearFilter;
+  atlasTex.magFilter = LinearFilter;
+  atlasTex.generateMipmaps = false;
+  atlasTex.wrapS = atlasTex.wrapT = ClampToEdgeWrapping;
+  atlasTex.flipY = false;
 
-  /* ---- state -------------------------------------------------------------- */
-  const state = { yaw: 0, pitch: 0, progress: 0, dragging: false, running: false, idle: 0 };
-  InertiaPlugin.track(state, 'yaw,pitch');
+  const u = {
+    uResolution: { value: [1, 1] as [number, number] },
+    uOffset: { value: [0, 0] as [number, number] },
+    uTileW: { value: 300 },
+    uTileH: { value: 300 },
+    uGap: { value: 30 },
+    uRadius: { value: RADIUS_PX },
+    uCurve: { value: CURVE },
+    uCurveRadius: { value: CURVE_RADIUS },
+    uZoom: { value: 0 },
+    uVignette: { value: VIGNETTE },
+    uDim: { value: 1 },
+    uRevealT: { value: -1 },
+    uAtlas: { value: atlasTex },
+    uAtlasCols: { value: 1 },
+    uAtlasRows: { value: 1 },
+    uAtlasCount: { value: 1 },
+    uSeed: { value: 7 },
+    uGroups: { value: opts.groups ?? 4 },
+  };
+  const material = new RawShaderMaterial({
+    glslVersion: GLSL3,
+    vertexShader,
+    fragmentShader,
+    uniforms: u,
+    transparent: true,
+    depthTest: false,
+    depthWrite: false,
+  });
+  const scene = new Scene();
+  const mesh = new Mesh(geometry, material);
+  mesh.frustumCulled = false;
+  scene.add(mesh);
+  const camera = new OrthographicCamera(-1, 1, 1, -1, 0, 1);
+
+  /* ---- state (CSS px) ------------------------------------------------------ */
+  const size = { w: 1, h: 1, dpr: 1, tile: 300, gap: 30 };
+  const grid = { x: 0, y: 0 }; // offset in CSS px
+  const vel = { x: 0, y: 0 };
+  const state = { progress: 0, dragging: false, moved: false, running: false, visible: true };
+  const home = { x: 0, y: 0 }; // offset used during the dolly: grid eased onto the nearest tile
+  let last = { x: 0, y: 0, t: 0 };
+
+  const cellW = () => size.tile + size.gap;
 
   function layout() {
-    const w = canvas.clientWidth || 1;
-    const h = canvas.clientHeight || 1;
-    const dpr = Math.min(window.devicePixelRatio || 1, 1.75); // tiles are soft-edged anyway; saves fill rate on retina
-    renderer.setPixelRatio(dpr);
-    renderer.setSize(w, h, false);
-    camera.aspect = w / h;
-    // keep the horizontal field of view constant so ~5 columns show on desktop
-    const portrait = camera.aspect < 0.8;
-    const hfov = portrait ? 40 : camera.aspect < 1.3 ? 62 : H_FOV;
-    lookTarget.y = portrait ? R * 0.16 : 0; // on phones the wall sits above the type block
-    const vfov = 2 * Math.atan(Math.tan(MathUtils.degToRad(hfov) / 2) / camera.aspect);
-    camera.fov = MathUtils.radToDeg(vfov);
-    camera.updateProjectionMatrix();
+    size.w = canvas.clientWidth || 1;
+    size.h = canvas.clientHeight || 1;
+    size.dpr = Math.min(window.devicePixelRatio || 1, DPR_MAX);
+    const portrait = size.w / size.h < 0.8;
+    const prevCell = cellW();
+    size.tile = Math.round(size.w * (portrait ? TILE_VW_PORTRAIT : TILE_VW));
+    size.gap = Math.round(size.w * (portrait ? GAP_VW_PORTRAIT : GAP_VW));
+    // keep the same cell under the centre when the cell size changes
+    if (prevCell !== cellW()) {
+      const ratio = cellW() / prevCell;
+      grid.x = (grid.x + size.w / 2) * ratio - size.w / 2;
+      grid.y = (grid.y + size.h / 2) * ratio - size.h / 2;
+    }
+    renderer.setPixelRatio(size.dpr);
+    renderer.setSize(size.w, size.h, false);
+    u.uResolution.value = [size.w * size.dpr, size.h * size.dpr];
+    u.uTileW.value = size.tile * size.dpr;
+    u.uTileH.value = size.tile * size.dpr;
+    u.uGap.value = size.gap * size.dpr;
+    u.uRadius.value = RADIUS_PX * size.dpr;
+  }
+
+  /** Offset that puts the centre of the nearest cell exactly at the screen centre. */
+  function nearestTileOffset() {
+    const c = cellW();
+    const cx = size.w / 2 + grid.x; // grid-space point under the screen centre
+    const cy = size.h / 2 + grid.y;
+    return {
+      x: (Math.floor(cx / c) + 0.5) * c - size.w / 2,
+      y: (Math.floor(cy / c) + 0.5) * c - size.h / 2,
+    };
   }
 
   function applyProgress() {
     const p = state.progress;
     const e = p < 0.5 ? 2 * p * p : 1 - Math.pow(-2 * p + 2, 2) / 2; // easeInOutQuad
-    camera.position.z = MathUtils.lerp(CAM_Z_START, CAM_Z_END, e);
-    camera.lookAt(lookTarget);
-    shared.uDim.value = 1 - Math.max(0, (p - 0.78) / 0.22); // darken into the manifesto
+    const zoomEnd = (Math.max(size.w, size.h) / size.tile) * 1.15 - 1; // centre tile overfills the viewport
+    u.uZoom.value = e * zoomEnd;
+    u.uCurve.value = CURVE * (1 - e); // flatten the lens as we fly in
+    u.uDim.value = 1 - Math.max(0, (p - 0.78) / 0.22);
+    if (p > 0 && !state.dragging) {
+      const snap = nearestTileOffset();
+      const k = Math.min(1, p / 0.35);
+      home.x = grid.x + (snap.x - grid.x) * k;
+      home.y = grid.y + (snap.y - grid.y) * k;
+    }
   }
 
+  let lastFrame = performance.now();
   function render() {
-    if (!state.dragging) state.idle += 0.016;
-    dome.rotation.y = state.yaw + Math.sin(state.idle * 0.35) * 0.012; // slow breathing
-    dome.rotation.x = state.pitch;
+    const now = performance.now();
+    const dt = Math.min((now - lastFrame) / 1000, 0.05);
+    lastFrame = now;
+    if (!state.dragging) {
+      if (Math.abs(vel.x) > 0.01 || Math.abs(vel.y) > 0.01) {
+        grid.x += vel.x * dt * 60;
+        grid.y += vel.y * dt * 60;
+        vel.x *= FRICTION;
+        vel.y *= FRICTION;
+        if (state.progress > 0) applyProgress();
+      } else {
+        vel.x = vel.y = 0;
+      }
+    }
+    const useHome = state.progress > 0 && !state.dragging;
+    const ox = useHome ? home.x : grid.x;
+    const oy = useHome ? home.y : grid.y;
+    u.uOffset.value = [ox * size.dpr, oy * size.dpr];
     renderer.render(scene, camera);
   }
 
-  /* ---- drag (H6) ----------------------------------------------------------- */
-  let lastX = 0;
-  let lastY = 0;
-  let inertia: gsap.core.Tween | null = null;
-  const yawPerPx = () => 0.0032 * (1000 / Math.max(600, canvas.clientWidth)); // feel constant across widths
+  /* ---- hit test (same forward maths as the shader) -------------------------- */
+  function hitTest(clientX: number, clientY: number) {
+    const rect = canvas.getBoundingClientRect();
+    const px = clientX - rect.left;
+    const py = clientY - rect.top;
+    const cx = size.w / 2;
+    const cy = size.h / 2;
+    const dx = px - cx;
+    const dy = py - cy;
+    const r = Math.hypot(dx, dy);
+    const halfDiag = Math.max(Math.hypot(cx, cy), 1);
+    const reach = Math.max(halfDiag * CURVE_RADIUS, 1);
+    const k = u.uCurve.value / (reach * reach);
+    const distortedR = r / (1 + Math.min(k * r * r, 0.95));
+    const zf = Math.max(1 + u.uZoom.value, 0.01);
+    const sx = cx + (r > 0 ? (dx / r) * distortedR : 0) / zf + grid.x;
+    const sy = cy + (r > 0 ? (dy / r) * distortedR : 0) / zf + grid.y;
+    const c = cellW();
+    const col = Math.floor(sx / c);
+    const row = Math.floor(sy / c);
+    const lx = sx - col * c - size.gap / 2;
+    const ly = sy - row * c - size.gap / 2;
+    if (lx < 0 || lx > size.tile || ly < 0 || ly > size.tile) return null;
+    const count = tiles.length;
+    const groups = Math.max(1, u.uGroups.value);
+    const variants = Math.max(1, Math.floor(count / groups));
+    const group = (((col + 2 * row) % groups) + groups) % groups;
+    const variant = hashCell(col, row, u.uSeed.value) % variants;
+    const idx = Math.min(group + groups * variant, count - 1);
+    return { index: idx, src: tiles[idx] };
+  }
 
+  /* ---- drag ----------------------------------------------------------------- */
   function onDown(e: PointerEvent) {
     if (e.button !== 0) return;
-    inertia?.kill();
     state.dragging = true;
-    lastX = e.clientX;
-    lastY = e.clientY;
+    state.moved = false;
+    vel.x = vel.y = 0;
+    last = { x: e.clientX, y: e.clientY, t: performance.now() };
     canvas.setPointerCapture(e.pointerId);
     canvas.classList.add('is-dragging');
   }
   function onMove(e: PointerEvent) {
     if (!state.dragging) return;
-    const k = yawPerPx();
-    state.yaw += (e.clientX - lastX) * k;
-    if (!coarsePointer) state.pitch = MathUtils.clamp(state.pitch - (e.clientY - lastY) * k * 0.6, -MAX_PITCH, MAX_PITCH);
-    lastX = e.clientX;
-    lastY = e.clientY;
+    const now = performance.now();
+    const dt = Math.max(now - last.t, 1);
+    const dx = e.clientX - last.x;
+    const dy = coarsePointer ? 0 : e.clientY - last.y; // on touch, vertical swipes scroll the page
+    if (Math.abs(dx) > 2 || Math.abs(dy) > 2) state.moved = true;
+    grid.x -= dx; // grab-and-move: content follows the pointer
+    grid.y -= dy;
+    vel.x = -(dx / dt) * 16;
+    vel.y = -(dy / dt) * 16;
+    last = { x: e.clientX, y: e.clientY, t: now };
   }
   function onUp(e: PointerEvent) {
     if (!state.dragging) return;
@@ -240,58 +318,66 @@ export function createHeroWall(opts: HeroWallOptions): HeroWall | null {
     } catch {
       /* already released */
     }
-    inertia = gsap.to(state, {
-      inertia: {
-        yaw: { velocity: 'auto' },
-        pitch: { velocity: 'auto', min: -MAX_PITCH, max: MAX_PITCH },
-        resistance: 420,
-      },
-    });
+    if (!state.moved && e.type === 'pointerup') {
+      const hit = hitTest(e.clientX, e.clientY);
+      if (hit) opts.onTileClick?.(hit.index, hit.src);
+    }
   }
-
   canvas.addEventListener('pointerdown', onDown);
   canvas.addEventListener('pointermove', onMove);
   canvas.addEventListener('pointerup', onUp);
   canvas.addEventListener('pointercancel', onUp);
 
-  /* ---- loop + visibility ---------------------------------------------------- */
+  /* ---- loop + visibility --------------------------------------------------- */
   const tick = () => render();
   const ro = new ResizeObserver(layout);
   ro.observe(canvas);
   layout();
+  // start with a tile exactly under the screen centre
+  const start = nearestTileOffset();
+  grid.x = start.x;
+  grid.y = start.y;
 
-  let visible = true;
   const io = new IntersectionObserver(
     ([entry]) => {
-      visible = entry.isIntersecting;
-      if (state.running) visible ? gsap.ticker.add(tick) : gsap.ticker.remove(tick);
+      state.visible = entry.isIntersecting;
+      if (state.running) state.visible ? gsap.ticker.add(tick) : gsap.ticker.remove(tick);
     },
     { threshold: 0 },
   );
   io.observe(canvas);
-
   const onVis = () => {
     if (!state.running) return;
-    document.hidden ? gsap.ticker.remove(tick) : visible && gsap.ticker.add(tick);
+    document.hidden ? gsap.ticker.remove(tick) : state.visible && gsap.ticker.add(tick);
   };
   document.addEventListener('visibilitychange', onVis);
 
+  /* ---- atlas ------------------------------------------------------------------ */
+  const atlasReady = buildAtlas(tiles).then(({ canvas: c, cols, rows, count }) => {
+    atlasTex.image = c;
+    atlasTex.needsUpdate = true;
+    u.uAtlasCols.value = cols;
+    u.uAtlasRows.value = rows;
+    u.uAtlasCount.value = count;
+    opts.onReady?.();
+  });
+
   const api: HeroWall = {
-    reveal() {
-      // the shader eases each tile from its own delay; we only advance the clock
+    ready: atlasReady,
+    reveal(delay = 0) {
       const total = 7 * 0.075 + 1.15;
-      return gsap.timeline().fromTo(shared.uRevealT, { value: 0 }, { value: total, duration: total, ease: 'none' });
+      return gsap.fromTo(u.uRevealT, { value: 0 }, { value: total, duration: total, ease: 'none', delay });
     },
     setProgress(p) {
-      state.progress = MathUtils.clamp(p, 0, 1);
+      state.progress = Math.min(1, Math.max(0, p));
       applyProgress();
     },
     start() {
       if (state.running) return;
       state.running = true;
+      lastFrame = performance.now();
       applyProgress();
-      if (visible) gsap.ticker.add(tick);
-      opts.onReady?.();
+      if (state.visible) gsap.ticker.add(tick);
     },
     stop() {
       state.running = false;
@@ -306,9 +392,9 @@ export function createHeroWall(opts: HeroWallOptions): HeroWall | null {
       canvas.removeEventListener('pointermove', onMove);
       canvas.removeEventListener('pointerup', onUp);
       canvas.removeEventListener('pointercancel', onUp);
-      for (const m of materials) m.dispose();
+      material.dispose();
       geometry.dispose();
-      for (const t of textures) t.dispose();
+      atlasTex.dispose();
       renderer.dispose();
     },
   };

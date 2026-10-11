@@ -78,7 +78,7 @@ function renderIntro() {
   const tiles = heroTiles
     .map(
       (t, i) =>
-        `<li class="wall__tile" style="--i:${i}"><img src="${t.src}" alt="" width="1200" height="1200" loading="${i < 4 ? 'eager' : 'lazy'}" decoding="async" /></li>`,
+        `<li class="wall__tile" style="--i:${i}" data-href="${t.href}"><img src="${t.src}" alt="" width="1200" height="1200" loading="${i < 4 ? 'eager' : 'lazy'}" decoding="async" /></li>`,
     )
     .join('');
   const preload = heroTiles.slice(0, 12).map((t) => `<link rel="preload" as="image" href="${t.src}" />`).join('');
