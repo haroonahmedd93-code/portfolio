@@ -1,13 +1,9 @@
 /**
- * Endless project-card grid, drawn as one full-screen pass and bent with the
- * barrel distortion + corner vignette from Phantom.land's grid (Codrops,
- * "Invisible Forces", 2025): the screen is mapped as
- *   s  = 2·(uv − ½)
- *   s' = s · (0.88 + distortion · s·s)
- * so the grid bulges towards the viewer and the edges fall away, darkened by
- * smoothstep(0.8, offset·0.799, (darkness + offset)·|s|).
- * Our grid is procedural (an endless sheet of atlas cards), so unlike Phantom's
- * render-to-texture pass there is nothing to run out of at the rim.
+ * Endless lens-warped tile grid, drawn as one full-screen pass.
+ *
+ * Technique after dipayanmaji/inverted-dome (fisheye/pincushion mapping of a
+ * flat endless grid so tiles *and* gutters bend like the inside of a dome),
+ * re-implemented here with our own reveal, dolly-snap and dim controls.
  * GLSL ES 3.00 (three.js GLSL3).
  */
 
@@ -28,10 +24,10 @@ uniform float uTileW;        // physical px
 uniform float uTileH;
 uniform float uGap;
 uniform float uRadius;       // corner radius, physical px
-uniform float uDistortion;   // 0 = flat, ~0.3 = curved
-uniform float uScale;        // base sample scale (0.88 like Phantom; ×1/zoom on the dolly, ×1.15 while pressed)
-uniform float uVigOffset;
-uniform float uVigDarkness;
+uniform float uCurve;        // lens strength (0 = flat)
+uniform float uCurveRadius;  // lens reach as a multiple of the half-diagonal
+uniform float uZoom;         // centre magnification (dolly)
+uniform float uVignette;     // 0..1 edge darkening
 uniform float uDim;          // 0..1 global brightness (fade to black)
 uniform float uRevealT;      // seconds since reveal start (<0 = hidden)
 uniform sampler2D uAtlas;
@@ -57,12 +53,21 @@ void main() {
   vec2 res = uResolution;
   vec2 center = res * 0.5;
   vec2 p = vec2(gl_FragCoord.x, res.y - gl_FragCoord.y); // y down, like CSS
+  vec2 d = p - center;
+  float r = length(d);
+  vec2 dir = r > 0.0001 ? d / r : vec2(0.0);
 
-  // Phantom's DistortionShader, in screen space
-  vec2 s = 2.0 * (p / res - 0.5);
-  float distToCenter = length(s);
-  s *= (uScale + uDistortion * dot(s, s));
-  vec2 gridPos = center + s * center + uOffset;
+  float halfDiag = max(length(center), 1.0);
+  float reach = max(halfDiag * uCurveRadius, 1.0);
+
+  // pincushion: screen radius grows faster than the sampled radius, so a
+  // fixed patch of grid spreads over more pixels near the rim
+  float k = uCurve / (reach * reach);
+  float kr2 = min(k * r * r, 0.95);
+  float distortedR = r / (1.0 + kr2);
+
+  float zoomFactor = max(1.0 + uZoom, 0.01);
+  vec2 gridPos = center + dir * distortedR / zoomFactor + uOffset;
 
   float cellW = uTileW + uGap;
   float cellH = uTileH + uGap;
@@ -75,7 +80,7 @@ void main() {
   float cellDist = length((cellCenterScreen - center) / vec2(cellW, cellH));
   float t = clamp((uRevealT - min(cellDist, 7.0) * 0.075) / 1.15, 0.0, 1.0);
   float e = expoOut(t);
-  float scale = mix(0.7, 1.0, e);
+  float scale = mix(0.6, 1.0, e);
 
   vec2 halfSize = vec2(uTileW, uTileH) * 0.5;
   vec2 rel = (local - halfSize) / scale; // scale about the tile centre
@@ -100,9 +105,8 @@ void main() {
   vec2 atlasUV = (vec2(mod(idx, uAtlasCols), floor(idx / uAtlasCols)) + uvInTile) * atlasCell;
 
   vec4 tex = textureLod(uAtlas, atlasUV, 0.0); // explicit LOD: no derivative artefacts near the rim
-  // Phantom's vignette (their smoothstep runs edge1 < edge0; written the defined way round)
-  float vig = 1.0 - smoothstep(uVigOffset * 0.799, 0.8, (uVigDarkness + uVigOffset) * distToCenter);
-  vec3 rgb = tex.rgb * vig * uDim;
+  float vig = uVignette * smoothstep(0.25, 1.0, r / halfDiag);
+  vec3 rgb = tex.rgb * (1.0 - vig) * uDim;
   outColor = vec4(rgb, tex.a * edge * e);
 }
 `;

@@ -81,11 +81,7 @@ function renderIntro() {
   const tiles = heroTiles
     .map(
       (t, i) =>
-        `<li class="wall__tile" style="--i:${i}" data-href="${t.href}" data-client="${esc(t.client)}" data-title="${esc(t.title)}" data-tags="${esc(t.tags.join('|'))}" data-year="${t.year}">
-  <span class="wall__meta wall__meta--top"><span>${esc(t.client)}</span><span>${esc(t.title)}</span></span>
-  <img src="${t.src}" alt="" width="1200" height="1200" loading="${i < 4 ? 'eager' : 'lazy'}" decoding="async" />
-  <span class="wall__meta wall__meta--bottom"><span class="wall__tags">${t.tags.map((g) => `<span>${esc(g)}</span>`).join('')}</span><span>${t.year}</span></span>
-</li>`,
+        `<li class="wall__tile" style="--i:${i}" data-href="${t.href}"><img src="${t.src}" alt="" width="1200" height="1200" loading="${i < 4 ? 'eager' : 'lazy'}" decoding="async" /></li>`,
     )
     .join('');
   const preload = heroTiles.slice(0, 12).map((t) => `<link rel="preload" as="image" href="${t.src}" />`).join('');
