@@ -1,28 +1,32 @@
 /**
  * Hero wall — the "inverted dome" of project tiles.
  *
- * An endless grid of square tiles, drawn in one full-screen fragment pass and
- * bent with a pincushion lens so the whole surface (tiles and gutters) reads
- * as the inside of a dome. Drag in any direction forever, with a friction
- * glide; scroll dollies (zooms) into the tile nearest the centre; click a tile
- * to open its case study.
- *
- * Technique after dipayanmaji/inverted-dome (lens grid + hashed cells),
- * re-implemented on three.js so it shares the renderer with later scenes.
+ * Real 3D: every tile is a flat square plane sitting on the inside of a
+ * sphere whose centre is the camera, facing inward (rotateY(θ) · rotateX(φ) ·
+ * translateZ(−R), the dome-gallery construction), so tiles away from the
+ * centre tilt in perspective while their faces stay crisp. The lattice is an
+ * endless flat grid in px: a tile at grid offset (u, v) from the screen centre
+ * sits at angles (u/R, v/R), with R = the camera's focal length — so dragging
+ * slides the grid across the dome forever in any direction. Scroll dollies the
+ * camera into the tile under the centre; click opens a case.
  */
 import {
-  BufferAttribute,
-  BufferGeometry,
   CanvasTexture,
+  ClampToEdgeWrapping,
   GLSL3,
+  InstancedBufferAttribute,
+  InstancedMesh,
   LinearFilter,
-  Mesh,
+  Matrix4,
   NoColorSpace,
-  OrthographicCamera,
+  Object3D,
+  PerspectiveCamera,
+  PlaneGeometry,
+  Raycaster,
   RawShaderMaterial,
   Scene,
+  Vector2,
   WebGLRenderer,
-  ClampToEdgeWrapping,
 } from 'three';
 import { gsap } from '../../core/gsap';
 import { coarsePointer } from '../../core/rm';
@@ -51,19 +55,20 @@ export interface HeroWall {
   destroy(): void;
 }
 
-/* ---- tuning (CSS px, as fractions of the viewport width) ------------------ */
-const TILE_VW = 0.192; // 327px at 1707 — measured from the reference
-const GAP_VW = 0.022;
+/* ---- tuning (measured on the reference at 1707×1015) ------------------------ */
+const TILE_VW = 0.192; // 327px tiles
+const GAP_VW = 0.022; // 38px gutters → 365px pitch
 const TILE_VW_PORTRAIT = 0.4;
 const GAP_VW_PORTRAIT = 0.04;
+const FOCAL_VW = 0.8; // focal length (= sphere radius) ≈ 1365px: ~32° tilt at the screen edge
+const FOCAL_MIN_VH = 0.6; // portrait screens: don't let the dome curl too hard top/bottom
 const RADIUS_PX = 16;
-const CURVE = 0.55; // lens strength
-const CURVE_RADIUS = 1.45; // lens reach
-const VIGNETTE = 0.3;
+const VIGNETTE = 0.55;
 const FRICTION = 0.92; // velocity kept per frame after release
-const DPR_MAX = 1.5; // full-screen fragment pass: fill-rate bound
+const DPR_MAX = 2;
+const MAX_INSTANCES = 512;
 
-/** Same integer hash as the shader, so clicks resolve to the drawn image. */
+/** Same integer hash as before (and as the reference), so placement is stable. */
 function hashCell(col: number, row: number, seed: number) {
   let h = (Math.imul(col, 374761393) + Math.imul(row, 668265263) + Math.imul(seed, -2048144777)) | 0;
   h = (h ^ (h >>> 13)) | 0;
@@ -111,12 +116,15 @@ async function buildAtlas(urls: string[], cell = 768) {
   return { canvas, cols, rows, count: urls.length };
 }
 
+const expoOut = (t: number) => (t >= 1 ? 1 : 1 - Math.pow(2, -10 * t));
+
 export function createHeroWall(opts: HeroWallOptions): HeroWall | null {
   const { canvas, tiles } = opts;
+  const groups = Math.max(1, opts.groups ?? 4);
 
   let renderer: WebGLRenderer;
   try {
-    renderer = new WebGLRenderer({ canvas, antialias: false, alpha: true, powerPreference: 'high-performance' });
+    renderer = new WebGLRenderer({ canvas, antialias: true, alpha: true, powerPreference: 'high-performance' });
   } catch {
     return null;
   }
@@ -126,9 +134,7 @@ export function createHeroWall(opts: HeroWallOptions): HeroWall | null {
   }
   renderer.setClearColor(0x000000, 0);
 
-  /* ---- full-screen triangle ---------------------------------------------- */
-  const geometry = new BufferGeometry();
-  geometry.setAttribute('position', new BufferAttribute(new Float32Array([-1, -1, 0, 3, -1, 0, -1, 3, 0]), 3));
+  /* ---- scene ----------------------------------------------------------------- */
   const atlasTex = new CanvasTexture(document.createElement('canvas'));
   atlasTex.colorSpace = NoColorSpace; // sRGB bytes pass straight through to the screen
   atlasTex.minFilter = LinearFilter;
@@ -138,24 +144,13 @@ export function createHeroWall(opts: HeroWallOptions): HeroWall | null {
   atlasTex.flipY = false;
 
   const u = {
-    uResolution: { value: [1, 1] as [number, number] },
-    uOffset: { value: [0, 0] as [number, number] },
-    uTileW: { value: 300 },
-    uTileH: { value: 300 },
-    uGap: { value: 30 },
-    uRadius: { value: RADIUS_PX },
-    uCurve: { value: CURVE },
-    uCurveRadius: { value: CURVE_RADIUS },
-    uZoom: { value: 0 },
-    uVignette: { value: VIGNETTE },
-    uDim: { value: 1 },
-    uRevealT: { value: -1 },
     uAtlas: { value: atlasTex },
     uAtlasCols: { value: 1 },
     uAtlasRows: { value: 1 },
-    uAtlasCount: { value: 1 },
-    uSeed: { value: 7 },
-    uGroups: { value: opts.groups ?? 4 },
+    uRadius: { value: 0.05 },
+    uDim: { value: 1 },
+    uVignette: { value: VIGNETTE },
+    uResolution: { value: [1, 1] as [number, number] },
   };
   const material = new RawShaderMaterial({
     glslVersion: GLSL3,
@@ -166,62 +161,76 @@ export function createHeroWall(opts: HeroWallOptions): HeroWall | null {
     depthTest: false,
     depthWrite: false,
   });
-  const scene = new Scene();
-  const mesh = new Mesh(geometry, material);
+  const geometry = new PlaneGeometry(1, 1);
+  const aIndex = new InstancedBufferAttribute(new Float32Array(MAX_INSTANCES), 1);
+  const aAlpha = new InstancedBufferAttribute(new Float32Array(MAX_INSTANCES), 1);
+  const aScale = new InstancedBufferAttribute(new Float32Array(MAX_INSTANCES), 1);
+  geometry.setAttribute('aIndex', aIndex);
+  geometry.setAttribute('aAlpha', aAlpha);
+  geometry.setAttribute('aScale', aScale);
+  const mesh = new InstancedMesh(geometry, material, MAX_INSTANCES);
   mesh.frustumCulled = false;
+  const scene = new Scene();
   scene.add(mesh);
-  const camera = new OrthographicCamera(-1, 1, 1, -1, 0, 1);
+  const camera = new PerspectiveCamera(40, 1, 1, 20000);
+  const dummy = new Object3D();
+  const tmpMat = new Matrix4();
 
   /* ---- state (CSS px) ------------------------------------------------------ */
-  const size = { w: 1, h: 1, dpr: 1, tile: 300, gap: 30 };
-  const grid = { x: 0, y: 0 }; // offset in CSS px
+  const size = { w: 1, h: 1, dpr: 1, tile: 300, gap: 30, focal: 1000 };
+  const grid = { x: 0, y: 0 }; // grid offset: the lattice point under the screen centre
   const vel = { x: 0, y: 0 };
-  const state = { progress: 0, dragging: false, moved: false, running: false, visible: true };
+  const state = { progress: 0, dragging: false, moved: false, running: false, visible: true, revealT: -1 };
   const home = { x: 0, y: 0 }; // offset used during the dolly: grid eased onto the nearest tile
+  const cells: { col: number; row: number }[] = []; // instance → lattice cell, rebuilt each frame
   let last = { x: 0, y: 0, t: 0 };
 
-  const cellW = () => size.tile + size.gap;
+  const pitch = () => size.tile + size.gap;
 
   function layout() {
     size.w = canvas.clientWidth || 1;
     size.h = canvas.clientHeight || 1;
     size.dpr = Math.min(window.devicePixelRatio || 1, DPR_MAX);
     const portrait = size.w / size.h < 0.8;
-    const prevCell = cellW();
+    const prev = pitch();
     size.tile = Math.round(size.w * (portrait ? TILE_VW_PORTRAIT : TILE_VW));
     size.gap = Math.round(size.w * (portrait ? GAP_VW_PORTRAIT : GAP_VW));
-    // keep the same cell under the centre when the cell size changes
-    if (prevCell !== cellW()) {
-      const ratio = cellW() / prevCell;
-      grid.x = (grid.x + size.w / 2) * ratio - size.w / 2;
-      grid.y = (grid.y + size.h / 2) * ratio - size.h / 2;
+    size.focal = Math.max(size.w * FOCAL_VW, size.h * FOCAL_MIN_VH);
+    if (prev !== pitch()) {
+      const ratio = pitch() / prev;
+      grid.x *= ratio;
+      grid.y *= ratio;
     }
     renderer.setPixelRatio(size.dpr);
     renderer.setSize(size.w, size.h, false);
+    camera.aspect = size.w / size.h;
+    camera.fov = (2 * Math.atan(size.h / 2 / size.focal) * 180) / Math.PI;
+    camera.updateProjectionMatrix();
     u.uResolution.value = [size.w * size.dpr, size.h * size.dpr];
-    u.uTileW.value = size.tile * size.dpr;
-    u.uTileH.value = size.tile * size.dpr;
-    u.uGap.value = size.gap * size.dpr;
-    u.uRadius.value = RADIUS_PX * size.dpr;
+    u.uRadius.value = RADIUS_PX / size.tile;
   }
 
-  /** Offset that puts the centre of the nearest cell exactly at the screen centre. */
+  /** Grid offset that puts the centre of the nearest cell exactly under the screen centre. */
   function nearestTileOffset() {
-    const c = cellW();
-    const cx = size.w / 2 + grid.x; // grid-space point under the screen centre
-    const cy = size.h / 2 + grid.y;
-    return {
-      x: (Math.floor(cx / c) + 0.5) * c - size.w / 2,
-      y: (Math.floor(cy / c) + 0.5) * c - size.h / 2,
-    };
+    const c = pitch();
+    return { x: Math.round(grid.x / c) * c, y: Math.round(grid.y / c) * c };
+  }
+
+  /** Image index for a lattice cell: project = (col + 2·row) mod groups, variant hashed. */
+  function tileIndex(col: number, row: number) {
+    const count = tiles.length;
+    const variants = Math.max(1, Math.floor(count / groups));
+    const group = (((col + 2 * row) % groups) + groups) % groups;
+    const variant = hashCell(col, row, 7) % variants;
+    return Math.min(group + groups * variant, count - 1);
   }
 
   function applyProgress() {
     const p = state.progress;
     const e = p < 0.5 ? 2 * p * p : 1 - Math.pow(-2 * p + 2, 2) / 2; // easeInOutQuad
-    const zoomEnd = (Math.max(size.w, size.h) / size.tile) * 1.15 - 1; // centre tile overfills the viewport
-    u.uZoom.value = e * zoomEnd;
-    u.uCurve.value = CURVE * (1 - e); // flatten the lens as we fly in
+    // dolly: the camera flies towards the centre tile until it overfills the viewport
+    const dEnd = (size.focal * size.tile) / (Math.max(size.w, size.h) * 1.1);
+    camera.position.z = -e * (size.focal - dEnd);
     u.uDim.value = 1 - Math.max(0, (p - 0.78) / 0.22);
     if (p > 0 && !state.dragging) {
       const snap = nearestTileOffset();
@@ -229,6 +238,57 @@ export function createHeroWall(opts: HeroWallOptions): HeroWall | null {
       home.x = grid.x + (snap.x - grid.x) * k;
       home.y = grid.y + (snap.y - grid.y) * k;
     }
+  }
+
+  /** Places every tile that can be on screen for the current offset. */
+  function placeTiles(ox: number, oy: number) {
+    const c = pitch();
+    const R = size.focal;
+    // lattice span that reaches the screen edges (angles of the edge rays) + one tile of slack
+    const spanX = R * Math.atan(size.w / 2 / R) + size.tile;
+    const spanY = R * Math.atan(size.h / 2 / R) + size.tile;
+    const colMin = Math.floor((ox - spanX) / c);
+    const colMax = Math.ceil((ox + spanX) / c);
+    const rowMin = Math.floor((oy - spanY) / c);
+    const rowMax = Math.ceil((oy + spanY) / c);
+    const index = aIndex.array as Float32Array;
+    const alpha = aAlpha.array as Float32Array;
+    const scl = aScale.array as Float32Array;
+    let n = 0;
+    cells.length = 0;
+    for (let row = rowMin; row <= rowMax && n < MAX_INSTANCES; row++) {
+      for (let col = colMin; col <= colMax && n < MAX_INSTANCES; col++) {
+        const ux = col * c - ox; // px from the screen centre, on the (flat) lattice
+        const uy = row * c - oy;
+        // rotateY(+θ) sends (0,0,−R) to −x, and rotateX(+φ) sends it to +y, so both
+        // angles are negated to put screen-right / screen-down tiles where they belong
+        const theta = -ux / R; // yaw
+        const phi = -uy / R; // pitch
+        // rotateY(θ) · rotateX(φ) · translateZ(−R): on the inside of the sphere, facing the camera
+        dummy.rotation.set(phi, theta, 0, 'YXZ');
+        dummy.position.set(0, 0, 0);
+        dummy.updateMatrix();
+        tmpMat.makeTranslation(0, 0, -R);
+        dummy.matrix.multiply(tmpMat);
+        tmpMat.makeScale(size.tile, size.tile, 1);
+        dummy.matrix.multiply(tmpMat);
+        mesh.setMatrixAt(n, dummy.matrix);
+        index[n] = tileIndex(col, row);
+        // centre-out reveal by distance in cells (expo.out, staggered .075s per cell)
+        const dist = Math.hypot(ux, uy) / c;
+        const t = state.revealT < 0 ? 0 : Math.min(1, Math.max(0, (state.revealT - Math.min(dist, 7) * 0.075) / 1.15));
+        const ee = expoOut(t);
+        alpha[n] = ee;
+        scl[n] = 0.6 + 0.4 * ee;
+        cells.push({ col, row });
+        n++;
+      }
+    }
+    mesh.count = n;
+    mesh.instanceMatrix.needsUpdate = true;
+    aIndex.needsUpdate = true;
+    aAlpha.needsUpdate = true;
+    aScale.needsUpdate = true;
   }
 
   let lastFrame = performance.now();
@@ -240,49 +300,30 @@ export function createHeroWall(opts: HeroWallOptions): HeroWall | null {
       if (Math.abs(vel.x) > 0.01 || Math.abs(vel.y) > 0.01) {
         grid.x += vel.x * dt * 60;
         grid.y += vel.y * dt * 60;
-        vel.x *= FRICTION;
-        vel.y *= FRICTION;
+        const keep = Math.pow(FRICTION, dt * 60);
+        vel.x *= keep;
+        vel.y *= keep;
         if (state.progress > 0) applyProgress();
       } else {
         vel.x = vel.y = 0;
       }
     }
     const useHome = state.progress > 0 && !state.dragging;
-    const ox = useHome ? home.x : grid.x;
-    const oy = useHome ? home.y : grid.y;
-    u.uOffset.value = [ox * size.dpr, oy * size.dpr];
+    placeTiles(useHome ? home.x : grid.x, useHome ? home.y : grid.y);
     renderer.render(scene, camera);
   }
 
-  /* ---- hit test (same forward maths as the shader) -------------------------- */
+  /* ---- hit test --------------------------------------------------------------- */
+  const raycaster = new Raycaster();
+  const ndc = new Vector2();
   function hitTest(clientX: number, clientY: number) {
     const rect = canvas.getBoundingClientRect();
-    const px = clientX - rect.left;
-    const py = clientY - rect.top;
-    const cx = size.w / 2;
-    const cy = size.h / 2;
-    const dx = px - cx;
-    const dy = py - cy;
-    const r = Math.hypot(dx, dy);
-    const halfDiag = Math.max(Math.hypot(cx, cy), 1);
-    const reach = Math.max(halfDiag * CURVE_RADIUS, 1);
-    const k = u.uCurve.value / (reach * reach);
-    const distortedR = r / (1 + Math.min(k * r * r, 0.95));
-    const zf = Math.max(1 + u.uZoom.value, 0.01);
-    const sx = cx + (r > 0 ? (dx / r) * distortedR : 0) / zf + grid.x;
-    const sy = cy + (r > 0 ? (dy / r) * distortedR : 0) / zf + grid.y;
-    const c = cellW();
-    const col = Math.floor(sx / c);
-    const row = Math.floor(sy / c);
-    const lx = sx - col * c - size.gap / 2;
-    const ly = sy - row * c - size.gap / 2;
-    if (lx < 0 || lx > size.tile || ly < 0 || ly > size.tile) return null;
-    const count = tiles.length;
-    const groups = Math.max(1, u.uGroups.value);
-    const variants = Math.max(1, Math.floor(count / groups));
-    const group = (((col + 2 * row) % groups) + groups) % groups;
-    const variant = hashCell(col, row, u.uSeed.value) % variants;
-    const idx = Math.min(group + groups * variant, count - 1);
+    ndc.set(((clientX - rect.left) / rect.width) * 2 - 1, -((clientY - rect.top) / rect.height) * 2 + 1);
+    raycaster.setFromCamera(ndc, camera);
+    const hits = raycaster.intersectObject(mesh, false);
+    const id = hits[0]?.instanceId;
+    if (id == null || !cells[id]) return null;
+    const idx = tileIndex(cells[id].col, cells[id].row);
     return { index: idx, src: tiles[idx] };
   }
 
@@ -334,9 +375,8 @@ export function createHeroWall(opts: HeroWallOptions): HeroWall | null {
   ro.observe(canvas);
   layout();
   // start with a tile exactly under the screen centre
-  const start = nearestTileOffset();
-  grid.x = start.x;
-  grid.y = start.y;
+  grid.x = 0;
+  grid.y = 0;
 
   const io = new IntersectionObserver(
     ([entry]) => {
@@ -353,12 +393,11 @@ export function createHeroWall(opts: HeroWallOptions): HeroWall | null {
   document.addEventListener('visibilitychange', onVis);
 
   /* ---- atlas ------------------------------------------------------------------ */
-  const atlasReady = buildAtlas(tiles).then(({ canvas: c, cols, rows, count }) => {
+  const atlasReady = buildAtlas(tiles).then(({ canvas: c, cols, rows }) => {
     atlasTex.image = c;
     atlasTex.needsUpdate = true;
     u.uAtlasCols.value = cols;
     u.uAtlasRows.value = rows;
-    u.uAtlasCount.value = count;
     opts.onReady?.();
   });
 
@@ -366,7 +405,7 @@ export function createHeroWall(opts: HeroWallOptions): HeroWall | null {
     ready: atlasReady,
     reveal(delay = 0) {
       const total = 7 * 0.075 + 1.15;
-      return gsap.fromTo(u.uRevealT, { value: 0 }, { value: total, duration: total, ease: 'none', delay });
+      return gsap.fromTo(state, { revealT: 0 }, { revealT: total, duration: total, ease: 'none', delay });
     },
     setProgress(p) {
       state.progress = Math.min(1, Math.max(0, p));
