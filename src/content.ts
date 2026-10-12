@@ -366,16 +366,41 @@ export const projects: Project[] = [
   },
 ];
 
+/** Card meta drawn onto each hero tile (client · title · tags · year), after Phantom's project cards. */
+export interface HeroTile {
+  src: string;
+  alt: string;
+  href: string;
+  client: string;
+  title: string;
+  tags: string[];
+  year: string;
+}
+const tileMeta: Record<string, { client: string; title: string; tags: string[] }> = {
+  bayut: { client: 'Bayut', title: 'Web redesign', tags: ['Product', 'Web', 'Design system'] },
+  motive: { client: 'Motive', title: 'Card controls', tags: ['Fintech', 'Product', 'Mobile'] },
+  trueframe: { client: 'TrueFrame', title: 'Figma → code', tags: ['Tooling', 'Motion', 'Web'] },
+  yallamotor: { client: 'YallaMotor', title: 'Marketplace', tags: ['Product', 'Web', 'Growth'] },
+};
+
 /** 12 tiles for the hero wall (static grid in Stage 1, Three.js wall from Stage 3). */
-export const heroTiles: { src: string; alt: string; href: string }[] = [
+export const heroTiles: HeroTile[] = [
   'bayut', 'motive', 'trueframe', 'yallamotor',
   'bayut', 'motive', 'trueframe', 'yallamotor',
   'bayut', 'motive', 'trueframe', 'yallamotor',
-].map((slug, i) => ({
-  src: ph(`tile-${slug}-${Math.floor(i / 4) + 1}`),
-  alt: '',
-  href: `/cases/${slug}/`,
-}));
+].map((slug, i) => {
+  const p = projects.find((x) => x.slug === slug)!;
+  const m = tileMeta[slug];
+  return {
+    src: ph(`tile-${slug}-${Math.floor(i / 4) + 1}`),
+    alt: '',
+    href: `/cases/${slug}/`,
+    client: m.client,
+    title: m.title,
+    tags: m.tags,
+    year: p.year,
+  };
+});
 
 export const about = {
   // 3 lines at 864px wide, like the original's statement title

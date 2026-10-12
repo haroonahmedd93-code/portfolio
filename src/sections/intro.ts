@@ -22,17 +22,23 @@ export async function initIntro() {
   const script = section.querySelector<HTMLElement>('[data-lede-script]')!;
 
   const tileEls = Array.from(fallback.querySelectorAll<HTMLElement>('[data-href]'));
-  const hrefBySrc = new Map(tileEls.map((li) => [li.querySelector('img')!.getAttribute('src')!, li.dataset.href!]));
-  const tiles = [...hrefBySrc.keys()];
+  const cards = tileEls.map((li) => ({
+    src: li.querySelector('img')!.getAttribute('src')!,
+    href: li.dataset.href!,
+    client: li.dataset.client ?? '',
+    title: li.dataset.title ?? '',
+    tags: (li.dataset.tags ?? '').split('|').filter(Boolean),
+    year: li.dataset.year ?? '',
+  }));
 
   let wall: HeroWall | null = null;
   if (!rm.reduced) {
     const { createHeroWall } = await import('../gl/hero-wall'); // three.js lives in its own chunk
     wall = createHeroWall({
       canvas,
-      tiles,
-      onTileClick(_i, src) {
-        const href = hrefBySrc.get(src);
+      cards,
+      onTileClick(i) {
+        const href = cards[i]?.href;
         if (href) window.location.assign(href);
       },
     });
